@@ -204,11 +204,12 @@ def main():
     
     # Sidebar für Auswahl
     # ForzaRied Logo einfügen
-    logo_path = "C:\\Users\\demmelb-ma\\OneDrive\\AKA\\ForzaRied.png"
+    logo_path = "ForzaRied.png"
     if os.path.exists(logo_path):
         st.sidebar.image(logo_path, width=200)
     else:
-        st.sidebar.header("📊 Team & Statistik Auswahl")
+        st.sidebar.markdown("## ⚽ AKA Teams")
+        st.sidebar.markdown("### 📊 Dashboard")
     
     # Team-Auswahl
     selected_team = st.sidebar.selectbox(
