@@ -162,7 +162,7 @@ def extract_additional_info_from_file(file_path: str) -> str:
     except Exception as e:
         return ""
 
-def get_file_modification_times(base_path: str = "C:\\Users\\demmelb-ma\\OneDrive\\AKA") -> str:
+def get_file_modification_times(base_path: str = ".") -> str:
     """
     Erstellt einen String mit den Modifikationszeiten aller relevanten Dateien.
     Wird als Cache-Key verwendet, um automatisch zu erkennen, wenn Dateien geändert wurden.
@@ -187,7 +187,7 @@ def get_file_modification_times(base_path: str = "C:\\Users\\demmelb-ma\\OneDriv
     
     return "_".join(modification_times)
 
-def load_team_data_from_files(base_path: str = "C:\\Users\\demmelb-ma\\OneDrive\\AKA") -> Dict[str, Dict[str, Any]]:
+def load_team_data_from_files(base_path: str = ".") -> Dict[str, Dict[str, Any]]:
     """
     Lädt alle Team-Daten automatisch aus den Dateien im AKA-Ordner.
     """

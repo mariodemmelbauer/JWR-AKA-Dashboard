@@ -1,101 +1,87 @@
 # AKA Teams Dashboard
 
-Ein interaktives Streamlit Dashboard für die Analyse der AKA Teams (U15, U16, U18) mit Eigene Tore und Gegentore Visualisierung.
+Ein interaktives Streamlit Dashboard für die Analyse von Fußball-Statistiken der AKA Teams (U15, U16, U18).
 
-## 🚀 Live Demo
+## Features
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://mariodemmelbauer-jwr-aka-dashboard.streamlit.app/)
+- **Spielfeld-Visualisierung**: Interaktive Darstellung von Toren und Assists auf einem Fußballfeld
+- **Team-Vergleich**: Vergleich zwischen verschiedenen Teams und Tor-Typen
+- **Goldene Zone**: Analyse der Tore in der goldenen Zone (Strafraum)
+- **Rote Zone**: Analyse der Assists in der roten Zone (zentraler Bereich)
+- **Dynamische Daten**: Automatische Aktualisierung bei Dateiänderungen
+- **Dark Mode**: Moderne, benutzerfreundliche Oberfläche
 
-## 📊 Features
+## Installation
 
-### Team-Auswahl
-- **U15** - Jugendteam U15
-- **U16** - Jugendteam U16  
-- **U18** - Jugendteam U18
-
-### Visualisierung
-- **Spielfeld-Darstellung** mit korrekten Maßen (68m x 100m)
-- **Tor-Positionen** als rote Kreise markiert
-- **Assist-Positionen** als orange Quadrate markiert
-- **Passwege** als gestrichelte Linien zwischen Assists und Toren
-- **Dark Mode Design** mit grünen Akzentfarben
-- **Nebeneinander-Anzeige** von Eigene Tore und Gegentore
-
-## 🎯 Verwendung
-
-1. **Team auswählen** in der linken Sidebar
-2. **Spielfelder betrachten** mit allen Tor- und Assist-Positionen
-3. **Live-Statistiken** in der Sidebar einsehen
-
-## 🔧 Lokale Installation
-
-1. **Repository klonen:**
-   ```bash
-   git clone https://github.com/mariodemmelbauer/JWR-AKA-Dashboard.git
-   cd JWR-AKA-Dashboard
-   ```
-
-2. **Dependencies installieren:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Dashboard starten:**
-   ```bash
-   streamlit run aka_dashboard.py
-   ```
-
-## 📁 Projektstruktur
-
-```
-JWR-AKA-Dashboard/
-├── aka_dashboard.py          # Haupt-Dashboard Anwendung
-├── requirements.txt          # Python Dependencies
-├── README.md                 # Projekt-Dokumentation
-├── ForzaRied.png            # Logo für Sidebar
-└── U15/                     # Team-spezifische Daten
-    ├── EigeneToreU15.py
-    └── GegentoreU15.py
+1. Repository klonen:
+```bash
+git clone <repository-url>
+cd aka-dashboard
 ```
 
-## 🌐 Streamlit Cloud Bereitstellung
+2. Abhängigkeiten installieren:
+```bash
+pip install -r requirements.txt
+```
 
-Das Dashboard kann einfach auf Streamlit Cloud bereitgestellt werden:
+3. Dashboard starten:
+```bash
+streamlit run aka_dashboard.py
+```
 
-1. Gehen Sie zu [share.streamlit.io](https://share.streamlit.io)
-2. Verbinden Sie Ihr GitHub Repository
-3. Wählen Sie `aka_dashboard.py` als Hauptdatei
-4. Deploy!
+## Verwendung
 
-## 📝 Anpassungen
+1. **Team-Auswahl**: Wähle zwei Teams für den Vergleich aus
+2. **Tor-Typ**: Wähle zwischen "Eigene Tore" und "Gegentore"
+3. **Zone-Auswahl**: Wähle zwischen "Goldene Zone" und "Rote Zone"
+4. **Visualisierung**: Das Dashboard zeigt die Statistiken und das Spielfeld
 
-Die Tor- und Assist-Positionen können in der `TEAMS_DATA` Struktur in `aka_dashboard.py` angepasst werden:
+## Datenstruktur
+
+Das Dashboard erwartet folgende Ordnerstruktur:
+
+```
+.
+├── U15/
+│   ├── EigeneToreU15.py
+│   └── GegentoreU15.py
+├── U16/
+│   ├── EigeneToreU16.py
+│   └── GegentoreU16.py
+├── U18/
+│   ├── EigeneToreU18.py
+│   └── GegentoreU18.py
+└── aka_dashboard.py
+```
+
+## Dateiformat
+
+Die Python-Dateien müssen folgende Struktur haben:
 
 ```python
-TEAMS_DATA = {
-    "U15": {
-        "eigene_tore": {
-            "goals": [(x1,y1), (x2,y2), ...],  # Tor-Positionen
-            "assists": [(x1,y1), (x2,y2), ...], # Assist-Positionen
-            "title": "U15 - Eigene Tore"
-        },
-        # ...
-    }
-}
+# Beispiel: EigeneToreU15.py
+goals = [(x1, y1), (x2, y2), ...]  # Koordinaten der Tore
+assists = [(x1, y1), (x2, y2), ...]  # Koordinaten der Assists
+
+plt.title("U15 - Eigene Tore\n Zusätzliche Informationen")
 ```
 
-## 📝 Hinweise
+## Streamlit Cloud Deployment
 
-- Alle Koordinaten sind in Metern angegeben
-- (0,0) entspricht der linken unteren Ecke des Spielfelds
-- Das Dashboard läuft standardmäßig auf `http://localhost:8501`
-- Dark Mode Design für bessere Benutzerfreundlichkeit
+1. Repository zu GitHub hochladen
+2. Bei [Streamlit Cloud](https://share.streamlit.io) anmelden
+3. Neues App erstellen
+4. Repository auswählen
+5. Hauptdatei: `aka_dashboard.py`
+6. Deploy!
 
-## 🤝 Beitragen
+## Technische Details
 
-Fork das Repository und erstellen Sie einen Pull Request für Verbesserungen.
+- **Framework**: Streamlit
+- **Visualisierung**: Matplotlib
+- **Caching**: Automatische Cache-Invalidierung bei Dateiänderungen
+- **Responsive Design**: Funktioniert auf Desktop und Mobile
 
-## 📄 Lizenz
+## Lizenz
 
-Dieses Projekt ist für den internen Gebrauch der AKA Teams bestimmt.
-
+Dieses Projekt ist für interne Verwendung der AKA Teams bestimmt.
