@@ -53,7 +53,7 @@ def draw_field():
 
     # Tore (Fußball-Symbol) & Assists
     goals = [(34,89),(42,95)]  # Torpositionen 
-    assists = [(17,70),(52,48)]  # Assist-Positionen
+    assists = [(17,71),(52,48)]  # Assist-Positionen
 
     # Tore markieren (kleiner Ball-Symbol)
     for i, goal in enumerate(goals):
