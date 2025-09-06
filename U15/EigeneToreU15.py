@@ -52,8 +52,8 @@ def draw_field():
     ax.add_patch(halbkreis_unten)
 
     # Tore (Fußball-Symbol) & Assists
-    goals = [(34,89),(42,95),(30,95)]  # Torpositionen 
-    assists = [(17,71),(52,48),)(75,34)]  # Assist-Positionen
+    goals = [(34,89),(42,95)]  # Torpositionen 
+    assists = [(17,70),(52,48)]  # Assist-Positionen
 
     # Tore markieren (kleiner Ball-Symbol)
     for i, goal in enumerate(goals):
@@ -70,7 +70,7 @@ def draw_field():
     # Legende seitlich links unten platzieren
     ax.legend(loc="lower left", fontsize=10)
 
-    plt.title("U15 - Tore\n     ")
+    plt.title("U15 - Tore\n 0 Elfmeter n.b.")
     plt.xlabel("Spielfeldbreite (m)")
     plt.ylabel("Spielfeldtiefe (m)")
     return ax

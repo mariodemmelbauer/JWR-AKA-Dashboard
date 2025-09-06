@@ -98,3 +98,4 @@ Fork das Repository und erstellen Sie einen Pull Request für Verbesserungen.
 ## 📄 Lizenz
 
 Dieses Projekt ist für den internen Gebrauch der AKA Teams bestimmt.
+
