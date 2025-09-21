@@ -167,7 +167,7 @@ def get_file_modification_times(base_path: str = ".") -> str:
     Erstellt einen String mit den Modifikationszeiten aller relevanten Dateien.
     Wird als Cache-Key verwendet, um automatisch zu erkennen, wenn Dateien geändert wurden.
     """
-    teams = ["U15", "U16", "U18", "JWR"]
+    teams = ["U15", "U16", "U18"]
     modification_times = []
     
     for team in teams:
@@ -194,7 +194,7 @@ def load_team_data_from_files(base_path: str = ".") -> Dict[str, Dict[str, Any]]
     teams_data = {}
     
     # Definiere die verfügbaren Teams und deren Ordner
-    teams = ["U15", "U16", "U18", "JWR"]
+    teams = ["U15", "U16", "U18"]
     
     for team in teams:
         team_folder = os.path.join(base_path, team)
