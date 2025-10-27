@@ -167,23 +167,38 @@ def get_file_modification_times(base_path: str = ".") -> str:
     Erstellt einen String mit den Modifikationszeiten aller relevanten Dateien.
     Wird als Cache-Key verwendet, um automatisch zu erkennen, wenn Dateien geändert wurden.
     """
-    teams = ["U15", "U16", "U18"]
+    teams = ["U15", "U16", "U18", "JWR"]
     modification_times = []
     
     for team in teams:
-        team_folder = os.path.join(base_path, team)
-        if os.path.exists(team_folder):
-            # Prüfe EigeneTore und Gegentore Dateien
-            eigene_tore_file = os.path.join(team_folder, f"EigeneTore{team}.py")
-            gegentore_file = os.path.join(team_folder, f"Gegentore{team}.py")
-            
-            if os.path.exists(eigene_tore_file):
-                mod_time = os.path.getmtime(eigene_tore_file)
-                modification_times.append(f"{team}_eigene_{mod_time}")
-            
-            if os.path.exists(gegentore_file):
-                mod_time = os.path.getmtime(gegentore_file)
-                modification_times.append(f"{team}_gegentore_{mod_time}")
+        if team == "JWR":
+            # Spezielle Behandlung für JWR
+            team_folder = os.path.join(base_path, team)
+            if os.path.exists(team_folder):
+                eigene_tore_file = os.path.join(team_folder, "EigeneToreJWR.py")
+                gegentore_file = os.path.join(team_folder, "GegentoreJWR.py")
+                
+                if os.path.exists(eigene_tore_file):
+                    mod_time = os.path.getmtime(eigene_tore_file)
+                    modification_times.append(f"{team}_eigene_{mod_time}")
+                
+                if os.path.exists(gegentore_file):
+                    mod_time = os.path.getmtime(gegentore_file)
+                    modification_times.append(f"{team}_gegentore_{mod_time}")
+        else:
+            team_folder = os.path.join(base_path, team)
+            if os.path.exists(team_folder):
+                # Prüfe EigeneTore und Gegentore Dateien
+                eigene_tore_file = os.path.join(team_folder, f"EigeneTore{team}.py")
+                gegentore_file = os.path.join(team_folder, f"Gegentore{team}.py")
+                
+                if os.path.exists(eigene_tore_file):
+                    mod_time = os.path.getmtime(eigene_tore_file)
+                    modification_times.append(f"{team}_eigene_{mod_time}")
+                
+                if os.path.exists(gegentore_file):
+                    mod_time = os.path.getmtime(gegentore_file)
+                    modification_times.append(f"{team}_gegentore_{mod_time}")
     
     return "_".join(modification_times)
 
@@ -194,26 +209,42 @@ def load_team_data_from_files(base_path: str = ".") -> Dict[str, Dict[str, Any]]
     teams_data = {}
     
     # Definiere die verfügbaren Teams und deren Ordner
-    teams = ["U15", "U16", "U18"]
+    teams = ["U15", "U16", "U18", "JWR"]
     
     for team in teams:
-        team_folder = os.path.join(base_path, team)
-        
-        if not os.path.exists(team_folder):
-            st.warning(f"Team-Ordner {team_folder} nicht gefunden!")
-            continue
-        
-        # Lade eigene Tore
-        eigene_tore_file = os.path.join(team_folder, f"EigeneTore{team}.py")
-        eigene_goals, eigene_assists = extract_goals_and_assists_from_file(eigene_tore_file)
-        eigene_additional_info = extract_additional_info_from_file(eigene_tore_file)
-        
-        # Lade Gegentore
-        gegentore_file = os.path.join(team_folder, f"Gegentore{team}.py")
-        gegentore_goals, gegentore_assists = extract_goals_and_assists_from_file(gegentore_file)
-        gegentore_additional_info = extract_additional_info_from_file(gegentore_file)
-        
-        
+        if team == "JWR":
+            # Spezielle Behandlung für JWR
+            team_folder = os.path.join(base_path, team)
+            
+            if not os.path.exists(team_folder):
+                st.warning(f"Team-Ordner {team_folder} nicht gefunden!")
+                continue
+            
+            # Lade eigene Tore
+            eigene_tore_file = os.path.join(team_folder, "EigeneToreJWR.py")
+            eigene_goals, eigene_assists = extract_goals_and_assists_from_file(eigene_tore_file)
+            eigene_additional_info = extract_additional_info_from_file(eigene_tore_file)
+            
+            # Lade Gegentore
+            gegentore_file = os.path.join(team_folder, "GegentoreJWR.py")
+            gegentore_goals, gegentore_assists = extract_goals_and_assists_from_file(gegentore_file)
+            gegentore_additional_info = extract_additional_info_from_file(gegentore_file)
+        else:
+            team_folder = os.path.join(base_path, team)
+            
+            if not os.path.exists(team_folder):
+                st.warning(f"Team-Ordner {team_folder} nicht gefunden!")
+                continue
+            
+            # Lade eigene Tore
+            eigene_tore_file = os.path.join(team_folder, f"EigeneTore{team}.py")
+            eigene_goals, eigene_assists = extract_goals_and_assists_from_file(eigene_tore_file)
+            eigene_additional_info = extract_additional_info_from_file(eigene_tore_file)
+            
+            # Lade Gegentore
+            gegentore_file = os.path.join(team_folder, f"Gegentore{team}.py")
+            gegentore_goals, gegentore_assists = extract_goals_and_assists_from_file(gegentore_file)
+            gegentore_additional_info = extract_additional_info_from_file(gegentore_file)
         
         # Erstelle Team-Datenstruktur
         teams_data[team] = {

@@ -45,7 +45,7 @@ def draw_field():
     halbkreis_unten = patches.Arc((34, 11), 18, 18, angle=0, theta1=35, theta2=145, edgecolor='white', linewidth=2)  # Unterer Halbkreis
     ax.add_patch(halbkreis_unten)
 
-    plt.title("JWR - Eigene Tore Assists - Heatmap")
+    plt.title("JWR 25/26 - Eigene Tore Assists - Heatmap")
     plt.xlabel("Spielfeldbreite (m)")
     plt.ylabel("Spielfeldtiefe (m)")
     return ax
@@ -55,10 +55,10 @@ def draw_heatmap(ax, goals):
     goal_positions = np.array(goals)
 
     # Erstelle Heatmap basierend auf Torpositionen
-    sns.kdeplot(x=goal_positions[:,0], y=goal_positions[:,1], cmap="Reds", fill=True, alpha=0.7, levels=100, ax=ax, bw_adjust=0.2)
+    sns.kdeplot(x=goal_positions[:,0], y=goal_positions[:,1], cmap="Reds", fill=True, alpha=0.7, levels=100, ax=ax, bw_adjust=0.1, warn_singular=False)
 
 # Beispiel-Assistpositionen
-goals = [(49, 98), (17, 77), (37, 85), (34, 80), (42, 85), (49, 66), (64, 89), (41, 64), (23, 51), (28, 44), (40, 78), (20, 54), (29, 58), (24, 85), (39, 84), (61, 82), (33, 75), (25, 67), (57, 80), (58, 37), (16, 78), (43, 24), (31, 76), (37, 78), (26, 82), (49, 69), (34, 85), (27, 90), (17, 48), (35, 58), (2, 51), (20, 15), (38, 36), (34, 85), (33, 74), (60, 80), (56, 95), (53, 72), (57, 94), (27, 48), (41, 63), (68, 82), (57, 88), (56, 90), (34, 95), (15, 70), (50,98)]
+goals = [(68,100),(34,43),(25,41),(52,47),(17,68),(40,84),(26,63),(39,86),(24,67),(15,58),(39,84),(43,95),(52,68),(34,83)]
 
 # Spielfeld zeichnen
 ax = draw_field()

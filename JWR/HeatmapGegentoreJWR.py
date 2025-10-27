@@ -45,7 +45,7 @@ def draw_field():
     halbkreis_unten = patches.Arc((34, 11), 18, 18, angle=0, theta1=35, theta2=145, edgecolor='white', linewidth=2)  # Unterer Halbkreis
     ax.add_patch(halbkreis_unten)
 
-    plt.title("JWR - Gegentore - Heatmap")
+    plt.title("JWR 25/26 - Gegentore - Heatmap")
     plt.xlabel("Spielfeldbreite (m)")
     plt.ylabel("Spielfeldtiefe (m)")
     return ax
@@ -58,7 +58,7 @@ def draw_heatmap(ax, goals):
     sns.kdeplot(x=goal_positions[:,0], y=goal_positions[:,1], cmap="Reds", fill=True, alpha=0.7, levels=100, ax=ax, bw_adjust=0.2, warn_singular=False)
 
 # Beispiel-Assistpositionen
-goals = [(34,96), (36, 86)]
+goals = [(34,96),(36,86),(30,95),(28,92),(34,88),(31,95),(40,93),(29,85),(37,89),(38,95),(18,83),(38,97),(28,98),(33,95),(37,95),(30,92),(40,98),(41,98),(42,86),(38,75),(26,95),(30,90),(37,97),(36,86),(18,81),(23,89),(30,82),(36,98),(32,76),(38,82),(40,98),(37,95)]
 
 # Spielfeld zeichnen
 ax = draw_field()
