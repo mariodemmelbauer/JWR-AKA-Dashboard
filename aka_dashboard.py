@@ -311,31 +311,31 @@ def count_goals_in_dashed_zones(goals):
             if 25 <= x <= 43 and 84 <= y <= 100:
                 goldene_zone_count += 1
                 in_dashed_zone = True
-            # Rote Zone: zentral oben (x: 25-43, y: 75-84)
+            # Zone 14: zentral oben (x: 25-43, y: 75-84)
             elif 25 <= x <= 43 and 75 <= y < 84:
                 rote_zone_count += 1
                 in_dashed_zone = True
-            # Zone 2: links oben (zwischen x=14 und x=25, unterhalb y=84)
+            # FDl: links oben (zwischen x=14 und x=25, unterhalb y=84)
             elif 14 <= x < 25 and 75 <= y <= 84:
                 zone2_count += 1
                 in_dashed_zone = True
-            # Zone 3: rechts oben (zwischen x=43 und x=54, unterhalb y=84)
+            # FDr: rechts oben (zwischen x=43 und x=54, unterhalb y=84)
             elif 43 < x <= 54 and 75 <= y <= 84:
                 zone3_count += 1
                 in_dashed_zone = True
-            # Zone 4: links unten (zwischen x=0 und x=14)
+            # HFAl: links unten (zwischen x=0 und x=14)
             elif 0 <= x < 14 and 75 <= y <= 90:
                 zone4_count += 1
                 in_dashed_zone = True
-            # Zone 5: rechts unten (zwischen x=54 und x=68)
+            # HFAr: rechts unten (zwischen x=54 und x=68)
             elif 54 < x <= 68 and 75 <= y <= 90:
                 zone5_count += 1
                 in_dashed_zone = True
-            # Zone 6: links oben erweitert (zwischen x=14 und x=25, oberhalb y=84)
+            # ND2l 1/2: links oben erweitert (zwischen x=14 und x=25, oberhalb y=84)
             elif 14 <= x < 25 and 84 < y <= 100:
                 zone6_count += 1
                 in_dashed_zone = True
-            # Zone 7: rechts oben erweitert (zwischen x=43 und x=54, oberhalb y=84)
+            # ND2r 1/2: rechts oben erweitert (zwischen x=43 und x=54, oberhalb y=84)
             elif 43 < x <= 54 and 84 < y <= 100:
                 zone7_count += 1
                 in_dashed_zone = True
@@ -406,7 +406,7 @@ def draw_field(team, goal_type, teams_data):
     goldene_zone_oben = patches.Rectangle((25, 100), 18, -16, edgecolor='none', facecolor='gold', alpha=0.3)
     ax.add_patch(goldene_zone_oben)
 
-    # Rote Zone mit 5m Raum Breite (18m) unterhalb der goldenen Zone bis zur gestrichelten Linie (y=75)
+    # Zone 14 mit 5m Raum Breite (18m) unterhalb der goldenen Zone bis zur gestrichelten Linie (y=75)
     # Gleiche Breite wie 5m Raum: x von 25 bis 43 (18m breit), y von 75 bis 84 (16m Linie)
     rote_zone_zentral = patches.Rectangle((25, 75), 18, 9, edgecolor='none', facecolor='red', alpha=0.3)
     ax.add_patch(rote_zone_zentral)
@@ -461,49 +461,49 @@ def draw_field(team, goal_type, teams_data):
                 color='#ffd700', alpha=0.8, 
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.6, edgecolor='#ffd700', linewidth=1))
     
-    # Rote Zone: zentral oben (x: 25-43, y: 75-84) - ganz unten positioniert
+    # Zone 14: zentral oben (x: 25-43, y: 75-84) - ganz unten positioniert
     if zone_percentages['rote_zone'] > 0:
         ax.text(34, 75, f"{zone_percentages['rote_zone']:.1f}%", 
                 ha='center', va='center', fontsize=12, fontweight='bold',
                 color='#ff4444', alpha=0.8, 
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.6, edgecolor='#ff4444', linewidth=1))
     
-    # Zone 2: links oben (x: 14-25, y: 75-84)
+    # FDl: links oben (x: 14-25, y: 75-84)
     if zone_percentages['zone2'] > 0:
         ax.text(19.5, 79.5, f"{zone_percentages['zone2']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
                 color='#ffffff', alpha=0.7,
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.5, edgecolor='none'))
     
-    # Zone 3: rechts oben (x: 43-54, y: 75-84)
+    # FDr: rechts oben (x: 43-54, y: 75-84)
     if zone_percentages['zone3'] > 0:
         ax.text(48.5, 79.5, f"{zone_percentages['zone3']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
                 color='#ffffff', alpha=0.7,
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.5, edgecolor='none'))
     
-    # Zone 4: links unten (x: 0-14, y: 75-90)
+    # HFAl: links unten (x: 0-14, y: 75-90)
     if zone_percentages['zone4'] > 0:
         ax.text(7, 82.5, f"{zone_percentages['zone4']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
                 color='#ffffff', alpha=0.7,
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.5, edgecolor='none'))
     
-    # Zone 5: rechts unten (x: 54-68, y: 75-90)
+    # HFAr: rechts unten (x: 54-68, y: 75-90)
     if zone_percentages['zone5'] > 0:
         ax.text(61, 82.5, f"{zone_percentages['zone5']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
                 color='#ffffff', alpha=0.7,
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.5, edgecolor='none'))
     
-    # Zone 6: links oben erweitert (x: 14-25, y: 84-100)
+    # ND2l 1/2: links oben erweitert (x: 14-25, y: 84-100)
     if zone_percentages['zone6'] > 0:
         ax.text(19.5, 92, f"{zone_percentages['zone6']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
                 color='#ffffff', alpha=0.7,
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.5, edgecolor='none'))
     
-    # Zone 7: rechts oben erweitert (x: 43-54, y: 84-100)
+    # ND2r 1/2: rechts oben erweitert (x: 43-54, y: 84-100)
     if zone_percentages['zone7'] > 0:
         ax.text(48.5, 92, f"{zone_percentages['zone7']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
@@ -579,7 +579,7 @@ def draw_all_teams_field(goal_type, teams_data):
     goldene_zone_oben = patches.Rectangle((25, 100), 18, -16, edgecolor='none', facecolor='gold', alpha=0.3)
     ax.add_patch(goldene_zone_oben)
 
-    # Rote Zone mit 5m Raum Breite (18m) unterhalb der goldenen Zone bis zur gestrichelten Linie (y=75)
+    # Zone 14 mit 5m Raum Breite (18m) unterhalb der goldenen Zone bis zur gestrichelten Linie (y=75)
     # Gleiche Breite wie 5m Raum: x von 25 bis 43 (18m breit), y von 75 bis 84 (16m Linie)
     rote_zone_zentral = patches.Rectangle((25, 75), 18, 9, edgecolor='none', facecolor='red', alpha=0.3)
     ax.add_patch(rote_zone_zentral)
@@ -641,49 +641,49 @@ def draw_all_teams_field(goal_type, teams_data):
                 color='#ffd700', alpha=0.8, 
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.6, edgecolor='#ffd700', linewidth=1))
     
-    # Rote Zone: zentral oben (x: 25-43, y: 75-84) - ganz unten positioniert
+    # Zone 14: zentral oben (x: 25-43, y: 75-84) - ganz unten positioniert
     if zone_percentages['rote_zone'] > 0:
         ax.text(34, 75, f"{zone_percentages['rote_zone']:.1f}%", 
                 ha='center', va='center', fontsize=12, fontweight='bold',
                 color='#ff4444', alpha=0.8, 
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.6, edgecolor='#ff4444', linewidth=1))
     
-    # Zone 2: links oben (x: 14-25, y: 75-84)
+    # FDl: links oben (x: 14-25, y: 75-84)
     if zone_percentages['zone2'] > 0:
         ax.text(19.5, 79.5, f"{zone_percentages['zone2']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
                 color='#ffffff', alpha=0.7,
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.5, edgecolor='none'))
     
-    # Zone 3: rechts oben (x: 43-54, y: 75-84)
+    # FDr: rechts oben (x: 43-54, y: 75-84)
     if zone_percentages['zone3'] > 0:
         ax.text(48.5, 79.5, f"{zone_percentages['zone3']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
                 color='#ffffff', alpha=0.7,
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.5, edgecolor='none'))
     
-    # Zone 4: links unten (x: 0-14, y: 75-90)
+    # HFAl: links unten (x: 0-14, y: 75-90)
     if zone_percentages['zone4'] > 0:
         ax.text(7, 82.5, f"{zone_percentages['zone4']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
                 color='#ffffff', alpha=0.7,
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.5, edgecolor='none'))
     
-    # Zone 5: rechts unten (x: 54-68, y: 75-90)
+    # HFAr: rechts unten (x: 54-68, y: 75-90)
     if zone_percentages['zone5'] > 0:
         ax.text(61, 82.5, f"{zone_percentages['zone5']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
                 color='#ffffff', alpha=0.7,
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.5, edgecolor='none'))
     
-    # Zone 6: links oben erweitert (x: 14-25, y: 84-100)
+    # ND2l 1/2: links oben erweitert (x: 14-25, y: 84-100)
     if zone_percentages['zone6'] > 0:
         ax.text(19.5, 92, f"{zone_percentages['zone6']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
                 color='#ffffff', alpha=0.7,
                 bbox=dict(boxstyle='round', facecolor='#000000', alpha=0.5, edgecolor='none'))
     
-    # Zone 7: rechts oben erweitert (x: 43-54, y: 84-100)
+    # ND2r 1/2: rechts oben erweitert (x: 43-54, y: 84-100)
     if zone_percentages['zone7'] > 0:
         ax.text(48.5, 92, f"{zone_percentages['zone7']:.1f}%", 
                 ha='center', va='center', fontsize=11, fontweight='bold',
@@ -719,25 +719,25 @@ def count_goals_in_zone(goals, zone_name):
         if zone_name == "Goldene Zone":
             if 25 <= x <= 43 and 84 <= y <= 100:
                 count += 1
-        elif zone_name == "Rote Zone":
+        elif zone_name == "Zone 14":
             if 25 <= x <= 43 and 75 <= y < 84:
                 count += 1
-        elif zone_name == "Zone 2":
+        elif zone_name == "FDl":
             if 14 <= x < 25 and 75 <= y <= 84:
                 count += 1
-        elif zone_name == "Zone 3":
+        elif zone_name == "FDr":
             if 43 < x <= 54 and 75 <= y <= 84:
                 count += 1
-        elif zone_name == "Zone 4":
+        elif zone_name == "HFAl":
             if 0 <= x < 14 and 75 <= y <= 90:
                 count += 1
-        elif zone_name == "Zone 5":
+        elif zone_name == "HFAr":
             if 54 < x <= 68 and 75 <= y <= 90:
                 count += 1
-        elif zone_name == "Zone 6":
+        elif zone_name == "ND2l 1/2":
             if 14 <= x < 25 and 84 < y <= 100:
                 count += 1
-        elif zone_name == "Zone 7":
+        elif zone_name == "ND2r 1/2":
             if 43 < x <= 54 and 84 < y <= 100:
                 count += 1
         elif zone_name == "Restliches Spielfeld":
@@ -790,25 +790,25 @@ def create_zone_preview(zone_name):
     if zone_name == "Goldene Zone":
         zone_rect = patches.Rectangle((25, 84), 18, 16, edgecolor='#ffd700', facecolor='#ffd700', alpha=0.5, linewidth=2)
         ax.add_patch(zone_rect)
-    elif zone_name == "Rote Zone":
+    elif zone_name == "Zone 14":
         zone_rect = patches.Rectangle((25, 75), 18, 9, edgecolor='#ff4444', facecolor='#ff4444', alpha=0.5, linewidth=2)
         ax.add_patch(zone_rect)
-    elif zone_name == "Zone 2":
+    elif zone_name == "FDl":
         zone_rect = patches.Rectangle((14, 75), 11, 9, edgecolor='#ffaa00', facecolor='#ffaa00', alpha=0.5, linewidth=2)
         ax.add_patch(zone_rect)
-    elif zone_name == "Zone 3":
+    elif zone_name == "FDr":
         zone_rect = patches.Rectangle((43, 75), 11, 9, edgecolor='#ffaa00', facecolor='#ffaa00', alpha=0.5, linewidth=2)
         ax.add_patch(zone_rect)
-    elif zone_name == "Zone 4":
+    elif zone_name == "HFAl":
         zone_rect = patches.Rectangle((0, 75), 14, 15, edgecolor='#ffaa00', facecolor='#ffaa00', alpha=0.5, linewidth=2)
         ax.add_patch(zone_rect)
-    elif zone_name == "Zone 5":
+    elif zone_name == "HFAr":
         zone_rect = patches.Rectangle((54, 75), 14, 15, edgecolor='#ffaa00', facecolor='#ffaa00', alpha=0.5, linewidth=2)
         ax.add_patch(zone_rect)
-    elif zone_name == "Zone 6":
+    elif zone_name == "ND2l 1/2":
         zone_rect = patches.Rectangle((14, 84), 11, 16, edgecolor='#ffaa00', facecolor='#ffaa00', alpha=0.5, linewidth=2)
         ax.add_patch(zone_rect)
-    elif zone_name == "Zone 7":
+    elif zone_name == "ND2r 1/2":
         zone_rect = patches.Rectangle((43, 84), 11, 16, edgecolor='#ffaa00', facecolor='#ffaa00', alpha=0.5, linewidth=2)
         ax.add_patch(zone_rect)
     elif zone_name == "Restliches Spielfeld":
@@ -876,7 +876,7 @@ def create_all_zones_overview_chart(teams_data, goal_type):
     ax.set_facecolor('#1a1a1a')
     
     teams = list(teams_data.keys())
-    zones = ["Goldene Zone", "Rote Zone", "Zone 2", "Zone 3", "Zone 4", "Zone 5", "Zone 6", "Zone 7", "Restliches Spielfeld"]
+    zones = ["Goldene Zone", "Zone 14", "FDl", "FDr", "HFAl", "HFAr", "ND2l 1/2", "ND2r 1/2", "Restliches Spielfeld"]
     
     goal_type_key = "eigene_tore" if goal_type == "Eigene Tore" else "gegentore"
     
@@ -952,7 +952,7 @@ def main():
     st.sidebar.markdown("---")
     
     # Zone-Auswahl (wird später am Ende der Sidebar angezeigt, aber hier initialisiert)
-    zone_options = ["Goldene Zone", "Rote Zone"]
+    zone_options = ["Goldene Zone", "Zone 14"]
     if "zone_selection" not in st.session_state:
         st.session_state.zone_selection = "Goldene Zone"
     
@@ -1069,7 +1069,7 @@ def main():
                 red_zone_assists += 1
         return red_zone_assists
     
-    # Berechne Goldene Zone und Rote Zone Daten für das ausgewählte Team
+    # Berechne Goldene Zone und Zone 14 Daten für das ausgewählte Team
     if team1 == "Alle Teams":
         # Für "Alle Teams" sammle alle Tore und Assists aller Teams
         all_eigene_goals = []
@@ -1087,7 +1087,7 @@ def main():
         team_eigene_total = len(all_eigene_goals)
         team_gegentore_total = len(all_gegentore_goals)
         
-        # Rote Zone Assists
+        # Zone 14 Assists
         team_eigene_red = count_assists_in_red_zone(all_eigene_assists)
         team_gegentore_red = count_assists_in_red_zone(all_gegentore_assists)
         team_eigene_assists_total = len(all_eigene_assists)
@@ -1103,7 +1103,7 @@ def main():
         team_eigene_total = len(team_eigene_data["goals"])
         team_gegentore_total = len(team_gegentore_data["goals"])
         
-        # Rote Zone Assists
+        # Zone 14 Assists
         team_eigene_red = count_assists_in_red_zone(team_eigene_data["assists"])
         team_gegentore_red = count_assists_in_red_zone(team_gegentore_data["assists"])
         team_eigene_assists_total = len(team_eigene_data["assists"])
@@ -1114,7 +1114,7 @@ def main():
     team_eigene_percent = (team_eigene_golden / team_eigene_total * 100) if team_eigene_total > 0 else 0
     team_gegentore_percent = (team_gegentore_golden / team_gegentore_total * 100) if team_gegentore_total > 0 else 0
     
-    # Berechne Prozentsätze für Rote Zone
+    # Berechne Prozentsätze für Zone 14
     team_eigene_red_percent = (team_eigene_red / team_eigene_assists_total * 100) if team_eigene_assists_total > 0 else 0
     team_gegentore_red_percent = (team_gegentore_red / team_gegentore_assists_total * 100) if team_gegentore_assists_total > 0 else 0
     
@@ -1233,7 +1233,7 @@ def main():
         if selected_zone == "Goldene Zone":
             st.sidebar.markdown("### 🏆 Goldene Zone")
         else:
-            st.sidebar.markdown("### 🔴 Rote Zone")
+            st.sidebar.markdown("### 🔴 Zone 14")
         
         # Platzhalter für Zone Daten (wird direkt danach aktualisiert)
         zone_placeholder = st.sidebar.empty()
@@ -1257,7 +1257,7 @@ def main():
         zone_text += f"{team1_golden_goals} Tore von {team1_total_goals} Toren ({team1_golden_percent:.1f}%)\n\n"
         zone_text += f"**{team2} {goal_type2}:**\n"
         zone_text += f"{team2_golden_goals} Tore von {team2_total_goals} Toren ({team2_golden_percent:.1f}%)"
-    else:  # Rote Zone - zeige Daten der beiden ausgewählten Teams
+    else:  # Zone 14 - zeige Daten der beiden ausgewählten Teams
         # Hole Daten für Team 1
         team1_data = get_team_data(team1, goal_type1_internal)
         team1_red_assists = count_assists_in_red_zone(team1_data["assists"])
@@ -1304,7 +1304,7 @@ def main():
     
     elif selected_view == "Zonen-Vergleich":
         # Zone-Auswahl für Diagramm
-        zone_names = ["Goldene Zone", "Rote Zone", "Zone 2", "Zone 3", "Zone 4", "Zone 5", "Zone 6", "Zone 7", "Restliches Spielfeld"]
+        zone_names = ["Goldene Zone", "Zone 14", "FDl", "FDr", "HFAl", "HFAr", "ND2l 1/2", "ND2r 1/2", "Restliches Spielfeld"]
         selected_zone_for_chart = st.selectbox(
             "Zone für Vergleich auswählen:",
             zone_names,
