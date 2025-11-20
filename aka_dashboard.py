@@ -849,8 +849,9 @@ def create_zone_comparison_chart(teams_data, zone_name, goal_type):
         total_goals.append(total)
         percentages.append(percentage)
     
-    # Erstelle Balkendiagramm
-    bars = ax.bar(teams, goal_counts, color='#00ff88', alpha=0.8, edgecolor='#ffffff', linewidth=1.5)
+    # Erstelle Balkendiagramm - Farbe abhängig vom Tor-Typ
+    bar_color = '#ff4444' if goal_type == "Gegentore" else '#00ff88'  # Rot für Gegentore, Grün für eigene Tore
+    bars = ax.bar(teams, goal_counts, color=bar_color, alpha=0.8, edgecolor='#ffffff', linewidth=1.5)
     
     # Füge Prozentwerte über den Balken hinzu
     for i, (bar, count, total, pct) in enumerate(zip(bars, goal_counts, total_goals, percentages)):
