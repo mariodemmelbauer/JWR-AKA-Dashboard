@@ -757,6 +757,52 @@ def count_goals_in_zone(goals, zone_name):
                 count += 1
     return count
 
+def count_assists_in_zone(assists, zone_name):
+    """Zählt Assists in einer spezifischen Zone"""
+    count = 0
+    for assist in assists:
+        x, y = assist
+        if zone_name == "Goldene Zone":
+            if 25 <= x <= 43 and 84 <= y <= 100:
+                count += 1
+        elif zone_name == "Zone 14":
+            if 25 <= x <= 43 and 75 <= y < 84:
+                count += 1
+        elif zone_name == "FDl":
+            if 14 <= x < 25 and 75 <= y <= 84:
+                count += 1
+        elif zone_name == "FDr":
+            if 43 < x <= 54 and 75 <= y <= 84:
+                count += 1
+        elif zone_name == "HFAl":
+            if 0 <= x < 14 and 75 <= y <= 90:
+                count += 1
+        elif zone_name == "HFAr":
+            if 54 < x <= 68 and 75 <= y <= 90:
+                count += 1
+        elif zone_name == "ND2l 1/2":
+            if 14 <= x < 25 and 84 < y <= 100:
+                count += 1
+        elif zone_name == "ND2r 1/2":
+            if 43 < x <= 54 and 84 < y <= 100:
+                count += 1
+        elif zone_name == "Restliches Spielfeld":
+            # Alle Assists außerhalb der gestrichelten Zonen
+            in_zone = False
+            if y >= 75:
+                if (25 <= x <= 43 and 84 <= y <= 100) or \
+                   (25 <= x <= 43 and 75 <= y < 84) or \
+                   (14 <= x < 25 and 75 <= y <= 84) or \
+                   (43 < x <= 54 and 75 <= y <= 84) or \
+                   (0 <= x < 14 and 75 <= y <= 90) or \
+                   (54 < x <= 68 and 75 <= y <= 90) or \
+                   (14 <= x < 25 and 84 < y <= 100) or \
+                   (43 < x <= 54 and 84 < y <= 100):
+                    in_zone = True
+            if not in_zone:
+                count += 1
+    return count
+
 def create_zone_preview(zone_name):
     """Erstellt eine kleine Spielfeld-Visualisierung mit der markierten Zone"""
     plt.style.use('dark_background')
@@ -826,43 +872,57 @@ def create_zone_preview(zone_name):
     plt.tight_layout()
     return fig
 
-def create_zone_comparison_chart(teams_data, zone_name, goal_type):
-    """Erstellt ein Balkendiagramm für den Vergleich der Teams in einer Zone"""
+def create_zone_comparison_chart(teams_data, zone_name, goal_type, data_type="goals"):
+    """Erstellt ein Balkendiagramm für den Vergleich der Teams in einer Zone
+    
+    Args:
+        teams_data: Die Team-Daten
+        zone_name: Name der Zone
+        goal_type: "Eigene Tore" oder "Gegentore"
+        data_type: "goals" für Tore oder "assists" für Assists
+    """
     plt.style.use('dark_background')
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.set_facecolor('#1a1a1a')
     
     teams = list(teams_data.keys())
-    goal_counts = []
-    total_goals = []
+    counts = []
+    totals = []
     percentages = []
     
     goal_type_key = "eigene_tore" if goal_type == "Eigene Tore" else "gegentore"
     
     for team in teams:
-        goals = teams_data[team][goal_type_key]["goals"]
-        zone_goals = count_goals_in_zone(goals, zone_name)
-        total = len(goals)
-        percentage = (zone_goals / total * 100) if total > 0 else 0
+        if data_type == "goals":
+            data = teams_data[team][goal_type_key]["goals"]
+            zone_count = count_goals_in_zone(data, zone_name)
+        else:  # assists
+            data = teams_data[team][goal_type_key]["assists"]
+            zone_count = count_assists_in_zone(data, zone_name)
         
-        goal_counts.append(zone_goals)
-        total_goals.append(total)
+        total = len(data)
+        percentage = (zone_count / total * 100) if total > 0 else 0
+        
+        counts.append(zone_count)
+        totals.append(total)
         percentages.append(percentage)
     
     # Erstelle Balkendiagramm - Farbe abhängig vom Tor-Typ
     bar_color = '#ff4444' if goal_type == "Gegentore" else '#00ff88'  # Rot für Gegentore, Grün für eigene Tore
-    bars = ax.bar(teams, goal_counts, color=bar_color, alpha=0.8, edgecolor='#ffffff', linewidth=1.5)
+    bars = ax.bar(teams, counts, color=bar_color, alpha=0.8, edgecolor='#ffffff', linewidth=1.5)
     
     # Füge Prozentwerte über den Balken hinzu
-    for i, (bar, count, total, pct) in enumerate(zip(bars, goal_counts, total_goals, percentages)):
+    for i, (bar, count, total, pct) in enumerate(zip(bars, counts, totals, percentages)):
         height = bar.get_height()
         ax.text(bar.get_x() + bar.get_width()/2., height,
                 f'{count}\n({pct:.1f}%)',
                 ha='center', va='bottom', fontsize=10, fontweight='bold', color='#ffffff')
     
     ax.set_xlabel('Teams', fontsize=12, color='#ffffff')
-    ax.set_ylabel('Anzahl Tore', fontsize=12, color='#ffffff')
-    ax.set_title(f'{zone_name} - {goal_type} Vergleich', fontsize=14, fontweight='bold', color='#00ff88', pad=20)
+    ylabel = 'Anzahl Assists' if data_type == "assists" else 'Anzahl Tore'
+    ax.set_ylabel(ylabel, fontsize=12, color='#ffffff')
+    title_suffix = "Assists" if data_type == "assists" else goal_type
+    ax.set_title(f'{zone_name} - {title_suffix} Vergleich', fontsize=14, fontweight='bold', color='#00ff88', pad=20)
     ax.tick_params(colors='#ffffff')
     ax.grid(True, alpha=0.3, color='#00ff88')
     
@@ -937,7 +997,7 @@ def main():
     # Sidebar für Auswahl
     
     # Ansichts-Auswahl ganz oben
-    view_options = ["Spielfeld-Ansicht", "Zonen-Vergleich"]
+    view_options = ["Spielfeld-Ansicht", "Zonen-Vergleich Tore", "Zonen-Vergleich Assists"]
     if "view_selection" not in st.session_state:
         st.session_state.view_selection = "Spielfeld-Ansicht"
     
@@ -1302,7 +1362,7 @@ def main():
                 fig2 = draw_field(team2, goal_type2_internal, current_teams_data)
             st.pyplot(fig2, use_container_width=True)
     
-    elif selected_view == "Zonen-Vergleich":
+    elif selected_view == "Zonen-Vergleich Tore":
         # Zone-Auswahl für Diagramm
         zone_names = ["Goldene Zone", "Zone 14", "FDl", "FDr", "HFAl", "HFAr", "ND2l 1/2", "ND2r 1/2", "Restliches Spielfeld"]
         selected_zone_for_chart = st.selectbox(
@@ -1327,8 +1387,37 @@ def main():
             st.pyplot(zone_preview_fig, use_container_width=True)
         
         with col_chart:
-            # Erstelle und zeige Diagramm
-            chart_fig = create_zone_comparison_chart(current_teams_data, selected_zone_for_chart, goal_type_for_chart)
+            # Erstelle und zeige Diagramm für Tore
+            chart_fig = create_zone_comparison_chart(current_teams_data, selected_zone_for_chart, goal_type_for_chart, data_type="goals")
+            st.pyplot(chart_fig, use_container_width=True)
+    
+    elif selected_view == "Zonen-Vergleich Assists":
+        # Zone-Auswahl für Diagramm
+        zone_names = ["Goldene Zone", "Zone 14", "FDl", "FDr", "HFAl", "HFAr", "ND2l 1/2", "ND2r 1/2", "Restliches Spielfeld"]
+        selected_zone_for_chart = st.selectbox(
+            "Zone für Vergleich auswählen:",
+            zone_names,
+            key="zone_chart_selector_assists"
+        )
+        
+        # Tor-Typ Auswahl für Diagramm
+        goal_type_for_chart = st.selectbox(
+            "Tor-Typ für Vergleich:",
+            ["Eigene Tore", "Gegentore"],
+            key="goal_type_chart_selector_assists"
+        )
+        
+        # Zeige kleine Spielfeld-Grafik mit markierter Zone
+        col_preview, col_chart = st.columns([1, 2])
+        
+        with col_preview:
+            st.markdown("### Zone-Vorschau")
+            zone_preview_fig = create_zone_preview(selected_zone_for_chart)
+            st.pyplot(zone_preview_fig, use_container_width=True)
+        
+        with col_chart:
+            # Erstelle und zeige Diagramm für Assists
+            chart_fig = create_zone_comparison_chart(current_teams_data, selected_zone_for_chart, goal_type_for_chart, data_type="assists")
             st.pyplot(chart_fig, use_container_width=True)
     
     # Footer
