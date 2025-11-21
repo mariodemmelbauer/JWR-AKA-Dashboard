@@ -1231,10 +1231,6 @@ def main():
     st.session_state.team1_selection = team1
     st.session_state.goal_type1_selection = goal_type1
     
-    # Automatische Team 2 Auswahl basierend auf Team 1
-    # Team 2 soll immer das gleiche Team wie Team 1 sein
-    default_team2 = team1
-    
     # Hilfsfunktion zur Konvertierung von Anzeige-Text zu internen Werten
     def convert_goal_type_to_internal(goal_type_display):
         """Konvertiert Anzeige-Text zu internen Werten (goal_type_key, data_type)"""
@@ -1253,7 +1249,11 @@ def main():
         else:
             return "eigene_tore", "goals"  # Fallback
     
-    # Automatische Tor-Typ Auswahl für Team 2
+    # Automatische Team 2 Auswahl basierend auf Team 1
+    # Standard: Team 2 = Team 1 mit Gegen-Tor-Typ
+    default_team2 = team1
+    
+    # Automatische Tor-Typ Auswahl für Team 2 basierend auf Team 1 Tor-Typ
     if goal_type1 == "Eigene Tore":
         # Wenn Team 1 "Eigene Tore" hat, wähle "Gegentore" für Team 2
         default_goal_type2 = "Gegentore"
@@ -1273,16 +1273,39 @@ def main():
         # Wenn Team 1 "Gegnerische Assists/Tore" hat, wähle "Eigene Assists/Tore" für Team 2
         default_goal_type2 = "Eigene Assists/Tore"
     
-    # Team 2 wird immer automatisch basierend auf Team 1 gesetzt
-    # Ignoriere Session State für Team 2, da es sich automatisch anpassen soll
-    team2_index = team_options.index(default_team2)
-    goal_type2_index = goal_options.index(default_goal_type2)
+    # Prüfe, ob Team 1 oder goal_type1 sich geändert hat
+    # Wenn ja, setze Team 2 automatisch auf Standard (Team 1 mit Gegen-Tor-Typ)
+    # Wenn nein, behalte die manuelle Auswahl des Benutzers bei
+    if ('last_team1' not in st.session_state or 
+        'last_goal_type1' not in st.session_state or
+        st.session_state.get('last_team1') != team1 or 
+        st.session_state.get('last_goal_type1') != goal_type1):
+        # Team 1 oder Tor-Typ hat sich geändert, setze Team 2 automatisch auf Standard
+        st.session_state.team2_selection = default_team2
+        st.session_state.goal_type2_selection = default_goal_type2
+        st.session_state.last_team1 = team1
+        st.session_state.last_goal_type1 = goal_type1
+    else:
+        # Team 1 hat sich nicht geändert, verwende die gespeicherten Werte (können manuell geändert worden sein)
+        if 'team2_selection' not in st.session_state:
+            st.session_state.team2_selection = default_team2
+        if 'goal_type2_selection' not in st.session_state:
+            st.session_state.goal_type2_selection = default_goal_type2
     
-    # Aktualisiere Session State für Team 2 mit den automatischen Werten
-    st.session_state.team2_selection = default_team2
-    st.session_state.goal_type2_selection = default_goal_type2
+    # Bestimme Index für Team 2 und Tor-Typ basierend auf gespeicherten Werten
+    try:
+        team2_index = team_options.index(st.session_state.team2_selection)
+    except ValueError:
+        team2_index = team_options.index(default_team2) if default_team2 in team_options else 0
+        st.session_state.team2_selection = default_team2
     
-    # Zweite Auswahl
+    try:
+        goal_type2_index = goal_options.index(st.session_state.goal_type2_selection)
+    except ValueError:
+        goal_type2_index = goal_options.index(default_goal_type2) if default_goal_type2 in goal_options else 0
+        st.session_state.goal_type2_selection = default_goal_type2
+    
+    # Zeige Team 2 als Selectbox (kann manuell geändert werden)
     team2 = st.sidebar.selectbox(
         "Team 2:",
         options=team_options,
@@ -1297,27 +1320,7 @@ def main():
         key="goal_type2"
     )
     
-    # Validierung: Verhindere identische Teams mit gleichen Tor-Typen
-    if team1 == team2 and goal_type1 == goal_type2:
-        # Nur wenn beide Teams identisch sind UND den gleichen Tor-Typ haben, ändere Team 2 automatisch
-        if goal_type1 == "Eigene Tore":
-            goal_type2 = "Gegentore"
-        elif goal_type1 == "Eigene Assists":
-            goal_type2 = "Gegnerische Assists"
-        elif goal_type1 == "Gegentore":
-            goal_type2 = "Eigene Tore"
-        elif goal_type1 == "Gegnerische Assists":
-            goal_type2 = "Eigene Assists"
-        elif goal_type1 == "Eigene Assists/Tore":
-            goal_type2 = "Gegnerische Assists/Tore"
-        else:  # Gegnerische Assists/Tore
-            goal_type2 = "Eigene Assists/Tore"
-        
-        # Aktualisiere die Auswahl
-        goal_type2_index = goal_options.index(goal_type2)
-        st.session_state.goal_type2_selection = goal_type2
-    
-    # Aktualisiere Session State für Team 2
+    # Aktualisiere Session State mit den aktuellen Werten (können manuell geändert worden sein)
     st.session_state.team2_selection = team2
     st.session_state.goal_type2_selection = goal_type2
     
