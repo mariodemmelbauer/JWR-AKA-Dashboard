@@ -357,8 +357,98 @@ def count_goals_in_dashed_zones(goals):
         'total': total_goals
     }
 
-def draw_field(team, goal_type, teams_data):
-    """Zeichnet das Spielfeld mit den entsprechenden Toren und Assists"""
+def count_assists_in_dashed_zones(assists):
+    """Zählt Assists in den gestrichelten Zonen und gibt Prozentsätze zurück, getrennt nach goldenen und roten Zonen"""
+    total_assists = len(assists)
+    if total_assists == 0:
+        return {
+            'goldene_zone': 0,  # x: 25-43, y: 84-100 (goldene Zone)
+            'rote_zone': 0,     # x: 25-43, y: 75-84 (rote Zone)
+            'zone2': 0,  # x: 14-25, y: 75-84 (links oben)
+            'zone3': 0,  # x: 43-54, y: 75-84 (rechts oben)
+            'zone4': 0,  # x: 0-14, y: 75-90 (links unten)
+            'zone5': 0,  # x: 54-68, y: 75-90 (rechts unten)
+            'zone6': 0,  # x: 14-25, y: 84-100 (links oben erweitert)
+            'zone7': 0,  # x: 43-54, y: 84-100 (rechts oben erweitert)
+            'restliches_spielfeld': 0,  # Alle Assists außerhalb der gestrichelten Zonen
+            'total': 0
+        }
+    
+    goldene_zone_count = 0  # x: 25-43, y: 84-100 (goldene Zone)
+    rote_zone_count = 0      # x: 25-43, y: 75-84 (rote Zone)
+    zone2_count = 0  # x: 14-25, y: 75-84 (links oben)
+    zone3_count = 0  # x: 43-54, y: 75-84 (rechts oben)
+    zone4_count = 0  # x: 0-14, y: 75-90 (links unten)
+    zone5_count = 0  # x: 54-68, y: 75-90 (rechts unten)
+    zone6_count = 0  # x: 14-25, y: 84-100 (links oben erweitert)
+    zone7_count = 0  # x: 43-54, y: 84-100 (rechts oben erweitert)
+    restliches_spielfeld_count = 0  # Alle Assists außerhalb der gestrichelten Zonen
+    
+    for assist in assists:
+        x, y = assist
+        in_dashed_zone = False
+        
+        # Prüfe, ob der Assist in einer gestrichelten Zone liegt (y >= 75)
+        if y >= 75:
+            # Goldene Zone: zentral oben (x: 25-43, y: 84-100)
+            if 25 <= x <= 43 and 84 <= y <= 100:
+                goldene_zone_count += 1
+                in_dashed_zone = True
+            # Zone 14: zentral oben (x: 25-43, y: 75-84)
+            elif 25 <= x <= 43 and 75 <= y < 84:
+                rote_zone_count += 1
+                in_dashed_zone = True
+            # FDl: links oben (zwischen x=14 und x=25, unterhalb y=84)
+            elif 14 <= x < 25 and 75 <= y <= 84:
+                zone2_count += 1
+                in_dashed_zone = True
+            # FDr: rechts oben (zwischen x=43 und x=54, unterhalb y=84)
+            elif 43 < x <= 54 and 75 <= y <= 84:
+                zone3_count += 1
+                in_dashed_zone = True
+            # HFAl: links unten (zwischen x=0 und x=14)
+            elif 0 <= x < 14 and 75 <= y <= 90:
+                zone4_count += 1
+                in_dashed_zone = True
+            # HFAr: rechts unten (zwischen x=54 und x=68)
+            elif 54 < x <= 68 and 75 <= y <= 90:
+                zone5_count += 1
+                in_dashed_zone = True
+            # ND2l 1/2: links oben erweitert (zwischen x=14 und x=25, oberhalb y=84)
+            elif 14 <= x < 25 and 84 < y <= 100:
+                zone6_count += 1
+                in_dashed_zone = True
+            # ND2r 1/2: rechts oben erweitert (zwischen x=43 und x=54, oberhalb y=84)
+            elif 43 < x <= 54 and 84 < y <= 100:
+                zone7_count += 1
+                in_dashed_zone = True
+        
+        # Wenn der Assist nicht in einer gestrichelten Zone liegt, zähle ihn zum restlichen Spielfeld
+        if not in_dashed_zone:
+            restliches_spielfeld_count += 1
+    
+    return {
+        'goldene_zone': (goldene_zone_count / total_assists * 100) if total_assists > 0 else 0,
+        'rote_zone': (rote_zone_count / total_assists * 100) if total_assists > 0 else 0,
+        'zone2': (zone2_count / total_assists * 100) if total_assists > 0 else 0,
+        'zone3': (zone3_count / total_assists * 100) if total_assists > 0 else 0,
+        'zone4': (zone4_count / total_assists * 100) if total_assists > 0 else 0,
+        'zone5': (zone5_count / total_assists * 100) if total_assists > 0 else 0,
+        'zone6': (zone6_count / total_assists * 100) if total_assists > 0 else 0,
+        'zone7': (zone7_count / total_assists * 100) if total_assists > 0 else 0,
+        'restliches_spielfeld': (restliches_spielfeld_count / total_assists * 100) if total_assists > 0 else 0,
+        'total': total_assists
+    }
+
+def draw_field(team, goal_type, teams_data, data_type="goals"):
+    """Zeichnet das Spielfeld mit den entsprechenden Toren oder Assists
+    
+    Args:
+        team: Team-Name
+        goal_type: "eigene_tore" oder "gegentore"
+        teams_data: Die Team-Daten
+        data_type: "goals" für Tore oder "assists" für Assists
+    """
     # Dark Mode für Matplotlib
     plt.style.use('dark_background')
     fig, ax = plt.subplots(figsize=(8, 12))
@@ -427,31 +517,84 @@ def draw_field(team, goal_type, teams_data):
     goals = team_data["goals"]
     assists = team_data["assists"]
     title = team_data["title"]
+    
+    # Passe Titel an, wenn Assists angezeigt werden
+    if data_type == "assists":
+        if goal_type == "eigene_tore":
+            title = title.replace("Eigene Tore", "Eigene Assists")
+        else:
+            title = title.replace("Gegentore", "Gegnerische Assists")
+    elif data_type == "both":
+        if goal_type == "eigene_tore":
+            title = title.replace("Eigene Tore", "Eigene Assists/Tore")
+        else:
+            title = title.replace("Gegentore", "Gegnerische Assists/Tore")
 
-    # Tore markieren (Farbe abhängig vom Tor-Typ)
-    if goal_type == "eigene_tore":
-        # Eigene Tore: grün-schwarz
-        for i, goal in enumerate(goals):
-            ax.scatter(goal[0], goal[1], color='#00ff00', edgecolors='#000000', marker='o', s=50, 
-                      label='Tor' if i == 0 else "", zorder=10)
-    else:
-        # Gegentore: rot-weiß
-        for i, goal in enumerate(goals):
-            ax.scatter(goal[0], goal[1], color='#ff4444', edgecolors='#ffffff', marker='o', s=50, 
-                      label='Tor' if i == 0 else "", zorder=10)
-
-    # Assists markieren (gelbe Quadrate)
-    for i, assist in enumerate(assists):
-        ax.scatter(assist[0], assist[1], color='#ffaa00', marker='s', s=30, 
-                  label='Assist' if i == 0 else "", zorder=10)
-
-    # Verbindungslinien zwischen Assist und Tor (Passwege)
-    for i in range(min(len(goals), len(assists))):
-        ax.plot([assists[i][0], goals[i][0]], [assists[i][1], goals[i][1]], 
-                '#ffffff', linestyle="--", alpha=0.5, linewidth=1)
-
-    # Berechne Prozentsätze für gestrichelte Zonen
-    zone_percentages = count_goals_in_dashed_zones(goals)
+    # Zeige Tore oder Assists basierend auf data_type
+    if data_type == "goals":
+        # Tore markieren (Farbe abhängig vom Tor-Typ)
+        if goal_type == "eigene_tore":
+            # Eigene Tore: grün-schwarz
+            for i, goal in enumerate(goals):
+                ax.scatter(goal[0], goal[1], color='#00ff00', edgecolors='#000000', marker='o', s=50, 
+                          label='Tor' if i == 0 else "", zorder=10)
+        else:
+            # Gegentore: rot-weiß
+            for i, goal in enumerate(goals):
+                ax.scatter(goal[0], goal[1], color='#ff4444', edgecolors='#ffffff', marker='o', s=50, 
+                          label='Tor' if i == 0 else "", zorder=10)
+        
+        # Verbindungslinien zwischen Assist und Tor (Passwege)
+        for i in range(min(len(goals), len(assists))):
+            ax.plot([assists[i][0], goals[i][0]], [assists[i][1], goals[i][1]], 
+                    '#ffffff', linestyle="--", alpha=0.5, linewidth=1)
+        
+        # Berechne Prozentsätze für gestrichelte Zonen (Tore)
+        zone_percentages = count_goals_in_dashed_zones(goals)
+    elif data_type == "assists":
+        # Assists markieren (Farbe abhängig vom Tor-Typ)
+        if goal_type == "eigene_tore":
+            # Eigene Assists: grün-schwarz
+            for i, assist in enumerate(assists):
+                ax.scatter(assist[0], assist[1], color='#00ff00', edgecolors='#000000', marker='s', s=50, 
+                          label='Assist' if i == 0 else "", zorder=10)
+        else:
+            # Gegnerische Assists: rot-weiß
+            for i, assist in enumerate(assists):
+                ax.scatter(assist[0], assist[1], color='#ff4444', edgecolors='#ffffff', marker='s', s=50, 
+                          label='Assist' if i == 0 else "", zorder=10)
+        
+        # Berechne Prozentsätze für gestrichelte Zonen (Assists)
+        zone_percentages = count_assists_in_dashed_zones(assists)
+    else:  # both - zeige sowohl Tore als auch Assists
+        # Tore markieren (Farbe abhängig vom Tor-Typ)
+        if goal_type == "eigene_tore":
+            # Eigene Tore: grün-schwarz
+            for i, goal in enumerate(goals):
+                ax.scatter(goal[0], goal[1], color='#00ff00', edgecolors='#000000', marker='o', s=50, 
+                          label='Tor' if i == 0 else "", zorder=10)
+            # Eigene Assists: gelb-orange (um sie von Toren zu unterscheiden)
+            for i, assist in enumerate(assists):
+                ax.scatter(assist[0], assist[1], color='#ffaa00', edgecolors='#000000', marker='s', s=50, 
+                          label='Assist' if i == 0 else "", zorder=10)
+        else:
+            # Gegentore: rot-weiß
+            for i, goal in enumerate(goals):
+                ax.scatter(goal[0], goal[1], color='#ff4444', edgecolors='#ffffff', marker='o', s=50, 
+                          label='Tor' if i == 0 else "", zorder=10)
+            # Gegnerische Assists: orange-weiß
+            for i, assist in enumerate(assists):
+                ax.scatter(assist[0], assist[1], color='#ff8800', edgecolors='#ffffff', marker='s', s=50, 
+                          label='Assist' if i == 0 else "", zorder=10)
+        
+        # Verbindungslinien zwischen Assist und Tor (Passwege)
+        for i in range(min(len(goals), len(assists))):
+            ax.plot([assists[i][0], goals[i][0]], [assists[i][1], goals[i][1]], 
+                    '#ffffff', linestyle="--", alpha=0.5, linewidth=1)
+        
+        # Berechne Prozentsätze für gestrichelte Zonen (kombiniert: Tore + Assists)
+        # Verwende Tore für die Prozentsätze, da diese die primären Daten sind
+        zone_percentages = count_goals_in_dashed_zones(goals)
     
     # Zeige Prozentsätze in den gestrichelten Zonen (leicht transparent)
     # Goldene Zone: zentral oben (x: 25-43, y: 84-100) - ganz oben positioniert
@@ -530,8 +673,14 @@ def draw_field(team, goal_type, teams_data):
     
     return fig
 
-def draw_all_teams_field(goal_type, teams_data):
-    """Zeichnet ein Spielfeld mit allen Toren aller Teams für einen bestimmten Tor-Typ"""
+def draw_all_teams_field(goal_type, teams_data, data_type="goals"):
+    """Zeichnet ein Spielfeld mit allen Toren oder Assists aller Teams für einen bestimmten Tor-Typ
+    
+    Args:
+        goal_type: "eigene_tore" oder "gegentore"
+        teams_data: Die Team-Daten
+        data_type: "goals" für Tore, "assists" für Assists oder "both" für beide
+    """
     # Dark Mode für Matplotlib
     plt.style.use('dark_background')
     fig, ax = plt.subplots(figsize=(8, 12))
@@ -595,43 +744,63 @@ def draw_all_teams_field(goal_type, teams_data):
     halbkreis_unten = patches.Arc((34, 11), 18, 18, angle=0, theta1=35, theta2=145, edgecolor='#00ff88', linewidth=2)
     ax.add_patch(halbkreis_unten)
 
-    # Sammle alle Tore aller Teams
-    all_goals = []
-    all_assists = []
+    # Sammle alle Tore oder Assists aller Teams
+    all_goals_data = []
+    all_assists_data = []
     
     # Bestimme Farben basierend auf Tor-Typ (wie bei einzelnen Teams)
     if goal_type == "eigene_tore":
         goal_color = '#00ff00'  # Grün für eigene Tore
         goal_edge = '#000000'   # Schwarz für eigene Tore
+        assist_color = '#ffaa00'  # Gelb-orange für eigene Assists
+        assist_edge = '#000000'  # Schwarz für eigene Assists
     else:
         goal_color = '#ff4444'  # Rot für Gegentore
         goal_edge = '#ffffff'   # Weiß für Gegentore
-    
-    assist_color = '#ffaa00'    # Gelb für alle Assists
+        assist_color = '#ff8800'  # Orange für gegnerische Assists
+        assist_edge = '#ffffff'  # Weiß für gegnerische Assists
     
     for i, (team, team_data) in enumerate(teams_data.items()):
-        goals = team_data[goal_type]["goals"]
-        assists = team_data[goal_type]["assists"]
-        
-        # Tore mit einheitlicher Farbe markieren (basierend auf Tor-Typ)
-        for j, goal in enumerate(goals):
-            ax.scatter(goal[0], goal[1], color=goal_color, edgecolors=goal_edge, marker='o', s=50, 
-                      label=f'{team} Tor' if j == 0 else "", zorder=10)
-            all_goals.append(goal)
-        
-        # Assists mit einheitlicher Farbe markieren
-        for j, assist in enumerate(assists):
-            ax.scatter(assist[0], assist[1], color=assist_color, marker='s', s=30, 
-                      label=f'{team} Assist' if j == 0 else "", zorder=10)
-            all_assists.append(assist)
+        if data_type == "goals":
+            data_list = team_data[goal_type]["goals"]
+            # Markiere Tore
+            for j, data_point in enumerate(data_list):
+                ax.scatter(data_point[0], data_point[1], color=goal_color, edgecolors=goal_edge, marker='o', s=50, 
+                          label=f'{team} Tor' if j == 0 else "", zorder=10)
+                all_goals_data.append(data_point)
+        elif data_type == "assists":
+            data_list = team_data[goal_type]["assists"]
+            # Markiere Assists
+            for j, data_point in enumerate(data_list):
+                ax.scatter(data_point[0], data_point[1], color=assist_color, edgecolors=assist_edge, marker='s', s=50, 
+                          label=f'{team} Assist' if j == 0 else "", zorder=10)
+                all_assists_data.append(data_point)
+        else:  # both
+            goals_list = team_data[goal_type]["goals"]
+            assists_list = team_data[goal_type]["assists"]
+            # Markiere Tore
+            for j, goal in enumerate(goals_list):
+                ax.scatter(goal[0], goal[1], color=goal_color, edgecolors=goal_edge, marker='o', s=50, 
+                          label=f'{team} Tor' if j == 0 else "", zorder=10)
+                all_goals_data.append(goal)
+            # Markiere Assists
+            for j, assist in enumerate(assists_list):
+                ax.scatter(assist[0], assist[1], color=assist_color, edgecolors=assist_edge, marker='s', s=50, 
+                          label=f'{team} Assist' if j == 0 else "", zorder=10)
+                all_assists_data.append(assist)
+            
+            # Verbindungslinien zwischen Assist und Tor (Passwege)
+            for k in range(min(len(goals_list), len(assists_list))):
+                ax.plot([assists_list[k][0], goals_list[k][0]], [assists_list[k][1], goals_list[k][1]], 
+                        '#ffffff', linestyle="--", alpha=0.5, linewidth=1)
 
-    # Verbindungslinien zwischen Assist und Tor (Passwege)
-    for i in range(min(len(all_goals), len(all_assists))):
-        ax.plot([all_assists[i][0], all_goals[i][0]], [all_assists[i][1], all_goals[i][1]], 
-                '#ffffff', linestyle="--", alpha=0.5, linewidth=1)
-
-    # Berechne Prozentsätze für gestrichelte Zonen (nur Tore)
-    zone_percentages = count_goals_in_dashed_zones(all_goals)
+    # Berechne Prozentsätze für gestrichelte Zonen
+    if data_type == "goals":
+        zone_percentages = count_goals_in_dashed_zones(all_goals_data)
+    elif data_type == "assists":
+        zone_percentages = count_assists_in_dashed_zones(all_assists_data)
+    else:  # both - verwende Tore für Prozentsätze
+        zone_percentages = count_goals_in_dashed_zones(all_goals_data)
     
     # Zeige Prozentsätze in den gestrichelten Zonen (leicht transparent)
     # Goldene Zone: zentral oben (x: 25-43, y: 84-100) - ganz oben positioniert
@@ -1024,7 +1193,11 @@ def main():
     
     # Erste Auswahl
     team_options = ["Alle Teams"] + list(current_teams_data.keys())
-    goal_options = ["Eigene Tore", "Gegentore"]
+    # In Spielfeld-Ansicht auch "Assists/Tore" Optionen hinzufügen
+    if selected_view == "Spielfeld-Ansicht":
+        goal_options = ["Eigene Tore", "Gegentore", "Eigene Assists", "Gegnerische Assists", "Eigene Assists/Tore", "Gegnerische Assists/Tore"]
+    else:
+        goal_options = ["Eigene Tore", "Gegentore", "Eigene Assists", "Gegnerische Assists"]
     
     # Sichere Index-Bestimmung für Team 1
     try:
@@ -1062,13 +1235,43 @@ def main():
     # Team 2 soll immer das gleiche Team wie Team 1 sein
     default_team2 = team1
     
+    # Hilfsfunktion zur Konvertierung von Anzeige-Text zu internen Werten
+    def convert_goal_type_to_internal(goal_type_display):
+        """Konvertiert Anzeige-Text zu internen Werten (goal_type_key, data_type)"""
+        if goal_type_display == "Eigene Tore":
+            return "eigene_tore", "goals"
+        elif goal_type_display == "Gegentore":
+            return "gegentore", "goals"
+        elif goal_type_display == "Eigene Assists":
+            return "eigene_tore", "assists"
+        elif goal_type_display == "Gegnerische Assists":
+            return "gegentore", "assists"
+        elif goal_type_display == "Eigene Assists/Tore":
+            return "eigene_tore", "both"
+        elif goal_type_display == "Gegnerische Assists/Tore":
+            return "gegentore", "both"
+        else:
+            return "eigene_tore", "goals"  # Fallback
+    
     # Automatische Tor-Typ Auswahl für Team 2
     if goal_type1 == "Eigene Tore":
         # Wenn Team 1 "Eigene Tore" hat, wähle "Gegentore" für Team 2
         default_goal_type2 = "Gegentore"
-    else:
+    elif goal_type1 == "Eigene Assists":
+        # Wenn Team 1 "Eigene Assists" hat, wähle "Gegnerische Assists" für Team 2
+        default_goal_type2 = "Gegnerische Assists"
+    elif goal_type1 == "Gegentore":
         # Wenn Team 1 "Gegentore" hat, wähle "Eigene Tore" für Team 2
         default_goal_type2 = "Eigene Tore"
+    elif goal_type1 == "Gegnerische Assists":
+        # Wenn Team 1 "Gegnerische Assists" hat, wähle "Eigene Assists" für Team 2
+        default_goal_type2 = "Eigene Assists"
+    elif goal_type1 == "Eigene Assists/Tore":
+        # Wenn Team 1 "Eigene Assists/Tore" hat, wähle "Gegnerische Assists/Tore" für Team 2
+        default_goal_type2 = "Gegnerische Assists/Tore"
+    else:  # Gegnerische Assists/Tore
+        # Wenn Team 1 "Gegnerische Assists/Tore" hat, wähle "Eigene Assists/Tore" für Team 2
+        default_goal_type2 = "Eigene Assists/Tore"
     
     # Team 2 wird immer automatisch basierend auf Team 1 gesetzt
     # Ignoriere Session State für Team 2, da es sich automatisch anpassen soll
@@ -1099,8 +1302,16 @@ def main():
         # Nur wenn beide Teams identisch sind UND den gleichen Tor-Typ haben, ändere Team 2 automatisch
         if goal_type1 == "Eigene Tore":
             goal_type2 = "Gegentore"
-        else:
+        elif goal_type1 == "Eigene Assists":
+            goal_type2 = "Gegnerische Assists"
+        elif goal_type1 == "Gegentore":
             goal_type2 = "Eigene Tore"
+        elif goal_type1 == "Gegnerische Assists":
+            goal_type2 = "Eigene Assists"
+        elif goal_type1 == "Eigene Assists/Tore":
+            goal_type2 = "Gegnerische Assists/Tore"
+        else:  # Gegnerische Assists/Tore
+            goal_type2 = "Eigene Assists/Tore"
         
         # Aktualisiere die Auswahl
         goal_type2_index = goal_options.index(goal_type2)
@@ -1179,50 +1390,60 @@ def main():
     team_gegentore_red_percent = (team_gegentore_red / team_gegentore_assists_total * 100) if team_gegentore_assists_total > 0 else 0
     
     # Konvertiere Anzeige-Text zurück zu internen Werten
-    goal_type1_internal = "eigene_tore" if goal_type1 == "Eigene Tore" else "gegentore"
-    goal_type2_internal = "eigene_tore" if goal_type2 == "Eigene Tore" else "gegentore"
+    goal_type1_key, data_type1 = convert_goal_type_to_internal(goal_type1)
+    goal_type2_key, data_type2 = convert_goal_type_to_internal(goal_type2)
     
     # Zone-Auswahl (für Berechnung)
     selected_zone = zone_options[zone_options.index(st.session_state.zone_selection)] if st.session_state.zone_selection in zone_options else "Goldene Zone"
     
-    def get_team_data(team_name, goal_type_internal):
+    def get_team_data(team_name, goal_type_key, data_type):
         """Hilfsfunktion um Team-Daten zu holen, auch für 'Alle Teams'"""
         if team_name == "Alle Teams":
             # Sammle alle Daten aller Teams für den gewählten Tor-Typ
-            all_goals = []
-            all_assists = []
+            all_data = []
             for team in current_teams_data.keys():
-                all_goals.extend(current_teams_data[team][goal_type_internal]["goals"])
-                all_assists.extend(current_teams_data[team][goal_type_internal]["assists"])
-            return {"goals": all_goals, "assists": all_assists}
+                if data_type == "goals":
+                    all_data.extend(current_teams_data[team][goal_type_key]["goals"])
+                elif data_type == "assists":
+                    all_data.extend(current_teams_data[team][goal_type_key]["assists"])
+                else:  # both - kombiniere Tore und Assists nicht, da sie separat angezeigt werden
+                    # Für "both" geben wir nur Tore zurück, da die Funktion beide separat behandelt
+                    all_data.extend(current_teams_data[team][goal_type_key]["goals"])
+            return all_data
         else:
-            return current_teams_data[team_name][goal_type_internal]
+            if data_type == "goals":
+                return current_teams_data[team_name][goal_type_key]["goals"]
+            elif data_type == "assists":
+                return current_teams_data[team_name][goal_type_key]["assists"]
+            else:  # both
+                # Für "both" geben wir nur Tore zurück, da die Funktion beide separat behandelt
+                return current_teams_data[team_name][goal_type_key]["goals"]
     
     # Vergleichsdaten laden
-    if team1 == "Alle Teams":
-        # Sammle alle Tore aller Teams für den gewählten Tor-Typ
-        all_goals1 = []
-        for team in current_teams_data.keys():
-            all_goals1.extend(current_teams_data[team][goal_type1_internal]["goals"])
-        data1 = {"goals": all_goals1}
+    # Für "both" müssen wir beide Daten separat zählen
+    if data_type1 == "both":
+        team1_goals = get_team_data(team1, goal_type1_key, "goals")
+        team1_assists = get_team_data(team1, goal_type1_key, "assists")
+        data1_count = len(team1_goals) + len(team1_assists)
     else:
-        data1 = current_teams_data[team1][goal_type1_internal]
+        data1_list = get_team_data(team1, goal_type1_key, data_type1)
+        data1_count = len(data1_list)
     
-    if team2 == "Alle Teams":
-        # Sammle alle Tore aller Teams für den gewählten Tor-Typ
-        all_goals2 = []
-        for team in current_teams_data.keys():
-            all_goals2.extend(current_teams_data[team][goal_type2_internal]["goals"])
-        data2 = {"goals": all_goals2}
+    if data_type2 == "both":
+        team2_goals = get_team_data(team2, goal_type2_key, "goals")
+        team2_assists = get_team_data(team2, goal_type2_key, "assists")
+        data2_count = len(team2_goals) + len(team2_assists)
     else:
-        data2 = current_teams_data[team2][goal_type2_internal]
-    
-    goals1_count = len(data1["goals"])
-    goals2_count = len(data2["goals"])
+        data2_list = get_team_data(team2, goal_type2_key, data_type2)
+        data2_count = len(data2_list)
     
     # Vergleich anzeigen mit zusätzlichen Informationen direkt darunter
     # Team 1
-    st.sidebar.markdown(f"**{team1} {goal_type1}:** {goals1_count}")
+    if data_type1 == "both":
+        data_label1 = "Assists/Tore"
+    else:
+        data_label1 = "Tore" if data_type1 == "goals" else "Assists"
+    st.sidebar.markdown(f"**{team1} {goal_type1}:** {data1_count} {data_label1}")
     if team1 != "Alle Teams":
         # Sichere Extraktion der zusätzlichen Informationen für Team 1
         team1_eigene_info = current_teams_data[team1]["eigene_tore"].get("additional_info", "")
@@ -1235,7 +1456,11 @@ def main():
             st.sidebar.markdown(f"{team1_gegentore_info}")
     
     # Team 2
-    st.sidebar.markdown(f"**{team2} {goal_type2}:** {goals2_count}")
+    if data_type2 == "both":
+        data_label2 = "Assists/Tore"
+    else:
+        data_label2 = "Tore" if data_type2 == "goals" else "Assists"
+    st.sidebar.markdown(f"**{team2} {goal_type2}:** {data2_count} {data_label2}")
     if team2 != "Alle Teams":
         # Sichere Extraktion der zusätzlichen Informationen für Team 2
         team2_eigene_info = current_teams_data[team2]["eigene_tore"].get("additional_info", "")
@@ -1302,38 +1527,94 @@ def main():
     if selected_zone == "Goldene Zone":
         # Goldene Zone - zeige Daten der beiden ausgewählten Teams
         # Hole Daten für Team 1
-        team1_data = get_team_data(team1, goal_type1_internal)
-        team1_golden_goals = count_goals_in_golden_zone(team1_data["goals"])
-        team1_total_goals = len(team1_data["goals"])
-        team1_golden_percent = (team1_golden_goals / team1_total_goals * 100) if team1_total_goals > 0 else 0
+        if data_type1 == "both":
+            team1_goals_list = get_team_data(team1, goal_type1_key, "goals")
+            team1_assists_list = get_team_data(team1, goal_type1_key, "assists")
+            team1_golden_goals = count_goals_in_golden_zone(team1_goals_list)
+            team1_golden_assists = count_assists_in_zone(team1_assists_list, "Goldene Zone")
+            team1_golden_count = team1_golden_goals + team1_golden_assists
+            team1_total = len(team1_goals_list) + len(team1_assists_list)
+            data_label1 = "Assists/Tore"
+        else:
+            team1_data_list = get_team_data(team1, goal_type1_key, data_type1)
+            if data_type1 == "goals":
+                team1_golden_count = count_goals_in_golden_zone(team1_data_list)
+                data_label1 = "Tore"
+            else:
+                team1_golden_count = count_assists_in_zone(team1_data_list, "Goldene Zone")
+                data_label1 = "Assists"
+            team1_total = len(team1_data_list)
+        team1_golden_percent = (team1_golden_count / team1_total * 100) if team1_total > 0 else 0
         
         # Hole Daten für Team 2
-        team2_data = get_team_data(team2, goal_type2_internal)
-        team2_golden_goals = count_goals_in_golden_zone(team2_data["goals"])
-        team2_total_goals = len(team2_data["goals"])
-        team2_golden_percent = (team2_golden_goals / team2_total_goals * 100) if team2_total_goals > 0 else 0
+        if data_type2 == "both":
+            team2_goals_list = get_team_data(team2, goal_type2_key, "goals")
+            team2_assists_list = get_team_data(team2, goal_type2_key, "assists")
+            team2_golden_goals = count_goals_in_golden_zone(team2_goals_list)
+            team2_golden_assists = count_assists_in_zone(team2_assists_list, "Goldene Zone")
+            team2_golden_count = team2_golden_goals + team2_golden_assists
+            team2_total = len(team2_goals_list) + len(team2_assists_list)
+            data_label2 = "Assists/Tore"
+        else:
+            team2_data_list = get_team_data(team2, goal_type2_key, data_type2)
+            if data_type2 == "goals":
+                team2_golden_count = count_goals_in_golden_zone(team2_data_list)
+                data_label2 = "Tore"
+            else:
+                team2_golden_count = count_assists_in_zone(team2_data_list, "Goldene Zone")
+                data_label2 = "Assists"
+            team2_total = len(team2_data_list)
+        team2_golden_percent = (team2_golden_count / team2_total * 100) if team2_total > 0 else 0
         
         zone_text = f"**{team1} {goal_type1}:**\n"
-        zone_text += f"{team1_golden_goals} Tore von {team1_total_goals} Toren ({team1_golden_percent:.1f}%)\n\n"
+        zone_text += f"{team1_golden_count} {data_label1} von {team1_total} {data_label1} ({team1_golden_percent:.1f}%)\n\n"
         zone_text += f"**{team2} {goal_type2}:**\n"
-        zone_text += f"{team2_golden_goals} Tore von {team2_total_goals} Toren ({team2_golden_percent:.1f}%)"
+        zone_text += f"{team2_golden_count} {data_label2} von {team2_total} {data_label2} ({team2_golden_percent:.1f}%)"
     else:  # Zone 14 - zeige Daten der beiden ausgewählten Teams
         # Hole Daten für Team 1
-        team1_data = get_team_data(team1, goal_type1_internal)
-        team1_red_assists = count_assists_in_red_zone(team1_data["assists"])
-        team1_total_assists = len(team1_data["assists"])
-        team1_red_percent = (team1_red_assists / team1_total_assists * 100) if team1_total_assists > 0 else 0
+        if data_type1 == "both":
+            team1_goals_list = get_team_data(team1, goal_type1_key, "goals")
+            team1_assists_list = get_team_data(team1, goal_type1_key, "assists")
+            team1_red_goals = count_goals_in_zone(team1_goals_list, "Zone 14")
+            team1_red_assists = count_assists_in_red_zone(team1_assists_list)
+            team1_red_count = team1_red_goals + team1_red_assists
+            team1_total = len(team1_goals_list) + len(team1_assists_list)
+            data_label1 = "Assists/Tore"
+        else:
+            team1_data_list = get_team_data(team1, goal_type1_key, data_type1)
+            if data_type1 == "goals":
+                team1_red_count = count_goals_in_zone(team1_data_list, "Zone 14")
+                data_label1 = "Tore"
+            else:
+                team1_red_count = count_assists_in_red_zone(team1_data_list)
+                data_label1 = "Assists"
+            team1_total = len(team1_data_list)
+        team1_red_percent = (team1_red_count / team1_total * 100) if team1_total > 0 else 0
         
         # Hole Daten für Team 2
-        team2_data = get_team_data(team2, goal_type2_internal)
-        team2_red_assists = count_assists_in_red_zone(team2_data["assists"])
-        team2_total_assists = len(team2_data["assists"])
-        team2_red_percent = (team2_red_assists / team2_total_assists * 100) if team2_total_assists > 0 else 0
+        if data_type2 == "both":
+            team2_goals_list = get_team_data(team2, goal_type2_key, "goals")
+            team2_assists_list = get_team_data(team2, goal_type2_key, "assists")
+            team2_red_goals = count_goals_in_zone(team2_goals_list, "Zone 14")
+            team2_red_assists = count_assists_in_red_zone(team2_assists_list)
+            team2_red_count = team2_red_goals + team2_red_assists
+            team2_total = len(team2_goals_list) + len(team2_assists_list)
+            data_label2 = "Assists/Tore"
+        else:
+            team2_data_list = get_team_data(team2, goal_type2_key, data_type2)
+            if data_type2 == "goals":
+                team2_red_count = count_goals_in_zone(team2_data_list, "Zone 14")
+                data_label2 = "Tore"
+            else:
+                team2_red_count = count_assists_in_red_zone(team2_data_list)
+                data_label2 = "Assists"
+            team2_total = len(team2_data_list)
+        team2_red_percent = (team2_red_count / team2_total * 100) if team2_total > 0 else 0
         
         zone_text = f"**{team1} {goal_type1}:**\n"
-        zone_text += f"{team1_red_assists} Assists von {team1_total_assists} Assists ({team1_red_percent:.1f}%)\n\n"
+        zone_text += f"{team1_red_count} {data_label1} von {team1_total} {data_label1} ({team1_red_percent:.1f}%)\n\n"
         zone_text += f"**{team2} {goal_type2}:**\n"
-        zone_text += f"{team2_red_assists} Assists von {team2_total_assists} Assists ({team2_red_percent:.1f}%)"
+        zone_text += f"{team2_red_count} {data_label2} von {team2_total} {data_label2} ({team2_red_percent:.1f}%)"
     
     # Zone-Daten nur bei Spielfeld-Ansicht anzeigen
     if selected_view == "Spielfeld-Ansicht":
@@ -1347,19 +1628,19 @@ def main():
         with col1:
             st.markdown(f"### {team1} - {goal_type1}")
             if team1 == "Alle Teams":
-                # Zeige alle Tore aller Teams auf einem Spielfeld
-                fig1 = draw_all_teams_field(goal_type1_internal, current_teams_data)
+                # Zeige alle Tore/Assists aller Teams auf einem Spielfeld
+                fig1 = draw_all_teams_field(goal_type1_key, current_teams_data, data_type1)
             else:
-                fig1 = draw_field(team1, goal_type1_internal, current_teams_data)
+                fig1 = draw_field(team1, goal_type1_key, current_teams_data, data_type1)
             st.pyplot(fig1, use_container_width=True)
         
         with col2:
             st.markdown(f"### {team2} - {goal_type2}")
             if team2 == "Alle Teams":
-                # Zeige alle Tore aller Teams auf einem Spielfeld
-                fig2 = draw_all_teams_field(goal_type2_internal, current_teams_data)
+                # Zeige alle Tore/Assists aller Teams auf einem Spielfeld
+                fig2 = draw_all_teams_field(goal_type2_key, current_teams_data, data_type2)
             else:
-                fig2 = draw_field(team2, goal_type2_internal, current_teams_data)
+                fig2 = draw_field(team2, goal_type2_key, current_teams_data, data_type2)
             st.pyplot(fig2, use_container_width=True)
     
     elif selected_view == "Zonen-Vergleich Tore":
@@ -1400,12 +1681,15 @@ def main():
             key="zone_chart_selector_assists"
         )
         
-        # Tor-Typ Auswahl für Diagramm
-        goal_type_for_chart = st.selectbox(
-            "Tor-Typ für Vergleich:",
-            ["Eigene Tore", "Gegentore"],
-            key="goal_type_chart_selector_assists"
+        # Assist-Typ Auswahl für Diagramm
+        assist_type_for_chart = st.selectbox(
+            "Assist-Typ für Vergleich:",
+            ["Eigene Assists", "Gegnerische Assists"],
+            key="assist_type_chart_selector_assists"
         )
+        
+        # Konvertiere zu internem Format für create_zone_comparison_chart
+        goal_type_for_chart = "Eigene Tore" if assist_type_for_chart == "Eigene Assists" else "Gegentore"
         
         # Zeige kleine Spielfeld-Grafik mit markierter Zone
         col_preview, col_chart = st.columns([1, 2])
