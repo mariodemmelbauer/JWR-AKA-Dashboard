@@ -73,10 +73,12 @@ st.markdown("""
 
 # Dark Mode CSS bereits oben definiert
 
-def extract_goals_and_assists_from_file(file_path: str) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int]]]:
+@st.cache_data(ttl=300, max_entries=20)
+def extract_goals_and_assists_from_file(file_path: str, file_mod_time: float) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int]]]:
     """
     Extrahiert Goals und Assists aus einer Python-Datei.
     Sucht nach Zeilen mit 'goals = [...]' und 'assists = [...]'
+    file_mod_time wird als Cache-Key verwendet, um Cache-Invalidierung bei Dateiänderungen zu gewährleisten.
     """
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -113,7 +115,6 @@ def extract_goals_and_assists_from_file(file_path: str) -> Tuple[List[Tuple[int,
         return goals, assists
     
     except Exception as e:
-        st.warning(f"Fehler beim Lesen der Datei {file_path}: {str(e)}")
         return [], []
 
 def parse_coordinates(coord_str: str) -> List[Tuple[int, int]]:
@@ -139,10 +140,12 @@ def parse_coordinates(coord_str: str) -> List[Tuple[int, int]]:
     
     return coordinates
 
-def extract_additional_info_from_file(file_path: str) -> str:
+@st.cache_data(ttl=300, max_entries=20)
+def extract_additional_info_from_file(file_path: str, file_mod_time: float) -> str:
     """
     Extrahiert zusätzliche Informationen aus dem plt.title() einer Python-Datei.
     Sucht nach Zeilen wie plt.title("U18 - Gegentore\n 2 Elfmeter n.b.")
+    file_mod_time wird als Cache-Key verwendet, um Cache-Invalidierung bei Dateiänderungen zu gewährleisten.
     """
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -163,6 +166,7 @@ def extract_additional_info_from_file(file_path: str) -> str:
     except Exception as e:
         return ""
 
+@st.cache_data(ttl=60, max_entries=1)
 def get_file_modification_times(base_path: str = ".") -> str:
     """
     Erstellt einen String mit den Modifikationszeiten aller relevanten Dateien.
@@ -218,34 +222,36 @@ def load_team_data_from_files(base_path: str = ".") -> Dict[str, Dict[str, Any]]
             team_folder = os.path.join(base_path, team)
             
             if not os.path.exists(team_folder):
-                st.warning(f"Team-Ordner {team_folder} nicht gefunden!")
                 continue
             
             # Lade eigene Tore
             eigene_tore_file = os.path.join(team_folder, "EigeneToreJWR.py")
-            eigene_goals, eigene_assists = extract_goals_and_assists_from_file(eigene_tore_file)
-            eigene_additional_info = extract_additional_info_from_file(eigene_tore_file)
+            eigene_mod_time = os.path.getmtime(eigene_tore_file) if os.path.exists(eigene_tore_file) else 0
+            eigene_goals, eigene_assists = extract_goals_and_assists_from_file(eigene_tore_file, eigene_mod_time)
+            eigene_additional_info = extract_additional_info_from_file(eigene_tore_file, eigene_mod_time)
             
             # Lade Gegentore
             gegentore_file = os.path.join(team_folder, "GegentoreJWR.py")
-            gegentore_goals, gegentore_assists = extract_goals_and_assists_from_file(gegentore_file)
-            gegentore_additional_info = extract_additional_info_from_file(gegentore_file)
+            gegentore_mod_time = os.path.getmtime(gegentore_file) if os.path.exists(gegentore_file) else 0
+            gegentore_goals, gegentore_assists = extract_goals_and_assists_from_file(gegentore_file, gegentore_mod_time)
+            gegentore_additional_info = extract_additional_info_from_file(gegentore_file, gegentore_mod_time)
         else:
             team_folder = os.path.join(base_path, team)
             
             if not os.path.exists(team_folder):
-                st.warning(f"Team-Ordner {team_folder} nicht gefunden!")
                 continue
             
             # Lade eigene Tore
             eigene_tore_file = os.path.join(team_folder, f"EigeneTore{team}.py")
-            eigene_goals, eigene_assists = extract_goals_and_assists_from_file(eigene_tore_file)
-            eigene_additional_info = extract_additional_info_from_file(eigene_tore_file)
+            eigene_mod_time = os.path.getmtime(eigene_tore_file) if os.path.exists(eigene_tore_file) else 0
+            eigene_goals, eigene_assists = extract_goals_and_assists_from_file(eigene_tore_file, eigene_mod_time)
+            eigene_additional_info = extract_additional_info_from_file(eigene_tore_file, eigene_mod_time)
             
             # Lade Gegentore
             gegentore_file = os.path.join(team_folder, f"Gegentore{team}.py")
-            gegentore_goals, gegentore_assists = extract_goals_and_assists_from_file(gegentore_file)
-            gegentore_additional_info = extract_additional_info_from_file(gegentore_file)
+            gegentore_mod_time = os.path.getmtime(gegentore_file) if os.path.exists(gegentore_file) else 0
+            gegentore_goals, gegentore_assists = extract_goals_and_assists_from_file(gegentore_file, gegentore_mod_time)
+            gegentore_additional_info = extract_additional_info_from_file(gegentore_file, gegentore_mod_time)
         
         # Erstelle Team-Datenstruktur
         teams_data[team] = {
@@ -266,7 +272,7 @@ def load_team_data_from_files(base_path: str = ".") -> Dict[str, Dict[str, Any]]
     return teams_data
 
 # Lade Team-Daten automatisch
-@st.cache_data(ttl=300)  # Cache für 5 Minuten, aber wird durch Datei-Änderungen invalidiert
+@st.cache_data(ttl=300, max_entries=5)  # Cache für 5 Minuten, max 5 Einträge
 def get_teams_data(file_modification_key: str):
     """Lädt die Team-Daten mit Caching für bessere Performance."""
     return load_team_data_from_files()
@@ -274,8 +280,21 @@ def get_teams_data(file_modification_key: str):
 # Datenstrukturen für alle Teams (wird automatisch aktualisiert)
 # TEAMS_DATA wird jetzt in main() geladen mit automatischer Datei-Erkennung
 
-def count_goals_in_dashed_zones(goals):
+@st.cache_resource(max_entries=2)
+def load_logo_image(logo_path: str):
+    """Lädt das Logo-Image mit Caching (Resource Cache für unveränderliche Ressourcen)"""
+    if os.path.exists(logo_path):
+        try:
+            return mpimg.imread(logo_path)
+        except:
+            return None
+    return None
+
+@st.cache_data(ttl=300, max_entries=50)
+def count_goals_in_dashed_zones(goals_tuple):
     """Zählt Tore in den gestrichelten Zonen und gibt Prozentsätze zurück, getrennt nach goldenen und roten Zonen"""
+    # Konvertiere Tuple zurück zu Liste für Caching (Tuples sind hashable)
+    goals = list(goals_tuple) if isinstance(goals_tuple, tuple) else goals_tuple
     total_goals = len(goals)
     if total_goals == 0:
         return {
@@ -357,8 +376,11 @@ def count_goals_in_dashed_zones(goals):
         'total': total_goals
     }
 
-def count_assists_in_dashed_zones(assists):
+@st.cache_data(ttl=300, max_entries=50)
+def count_assists_in_dashed_zones(assists_tuple):
     """Zählt Assists in den gestrichelten Zonen und gibt Prozentsätze zurück, getrennt nach goldenen und roten Zonen"""
+    # Konvertiere Tuple zurück zu Liste für Caching (Tuples sind hashable)
+    assists = list(assists_tuple) if isinstance(assists_tuple, tuple) else assists_tuple
     total_assists = len(assists)
     if total_assists == 0:
         return {
@@ -458,12 +480,9 @@ def draw_field(team, goal_type, teams_data, data_type="goals"):
     
     # SV Ried Logo als Hintergrund einfügen (falls vorhanden)
     logo_path = "C:\\Temp\\SV_Ried.png"
-    if os.path.exists(logo_path):
-        try:
-            logo = mpimg.imread(logo_path)
-            ax.imshow(logo, extent=[0, 68, 0, 100], alpha=0.05)
-        except:
-            pass  # Logo wird ignoriert falls es nicht geladen werden kann
+    logo = load_logo_image(logo_path)
+    if logo is not None:
+        ax.imshow(logo, extent=[0, 68, 0, 100], alpha=0.05)
     
     # Spielfeldlinien hinzufügen
     ax.plot([0, 68], [50, 50], '#00ff88', linestyle="-", zorder=5, linewidth=2)  # Mittellinie
@@ -549,8 +568,8 @@ def draw_field(team, goal_type, teams_data, data_type="goals"):
             ax.plot([assists[i][0], goals[i][0]], [assists[i][1], goals[i][1]], 
                     '#ffffff', linestyle="--", alpha=0.5, linewidth=1)
         
-        # Berechne Prozentsätze für gestrichelte Zonen (Tore)
-        zone_percentages = count_goals_in_dashed_zones(goals)
+        # Berechne Prozentsätze für gestrichelte Zonen (Tore) - konvertiere zu Tuple für Caching
+        zone_percentages = count_goals_in_dashed_zones(tuple(goals))
     elif data_type == "assists":
         # Assists markieren (Farbe abhängig vom Tor-Typ)
         if goal_type == "eigene_tore":
@@ -564,8 +583,8 @@ def draw_field(team, goal_type, teams_data, data_type="goals"):
                 ax.scatter(assist[0], assist[1], color='#ff4444', edgecolors='#ffffff', marker='s', s=50, 
                           label='Assist' if i == 0 else "", zorder=10)
         
-        # Berechne Prozentsätze für gestrichelte Zonen (Assists)
-        zone_percentages = count_assists_in_dashed_zones(assists)
+        # Berechne Prozentsätze für gestrichelte Zonen (Assists) - konvertiere zu Tuple für Caching
+        zone_percentages = count_assists_in_dashed_zones(tuple(assists))
     else:  # both - zeige sowohl Tore als auch Assists
         # Tore markieren (Farbe abhängig vom Tor-Typ)
         if goal_type == "eigene_tore":
@@ -594,7 +613,7 @@ def draw_field(team, goal_type, teams_data, data_type="goals"):
         
         # Berechne Prozentsätze für gestrichelte Zonen (kombiniert: Tore + Assists)
         # Verwende Tore für die Prozentsätze, da diese die primären Daten sind
-        zone_percentages = count_goals_in_dashed_zones(goals)
+        zone_percentages = count_goals_in_dashed_zones(tuple(goals))
     
     # Zeige Prozentsätze in den gestrichelten Zonen (leicht transparent)
     # Goldene Zone: zentral oben (x: 25-43, y: 84-100) - ganz oben positioniert
@@ -690,12 +709,9 @@ def draw_all_teams_field(goal_type, teams_data, data_type="goals"):
     
     # SV Ried Logo als Hintergrund einfügen (falls vorhanden)
     logo_path = "C:\\Temp\\SV_Ried.png"
-    if os.path.exists(logo_path):
-        try:
-            logo = mpimg.imread(logo_path)
-            ax.imshow(logo, extent=[0, 68, 0, 100], alpha=0.05)
-        except:
-            pass  # Logo wird ignoriert falls es nicht geladen werden kann
+    logo = load_logo_image(logo_path)
+    if logo is not None:
+        ax.imshow(logo, extent=[0, 68, 0, 100], alpha=0.05)
     
     # Spielfeldlinien hinzufügen (gleiche wie in draw_field)
     ax.plot([0, 68], [50, 50], '#00ff88', linestyle="-", zorder=5, linewidth=2)  # Mittellinie
@@ -794,13 +810,13 @@ def draw_all_teams_field(goal_type, teams_data, data_type="goals"):
                 ax.plot([assists_list[k][0], goals_list[k][0]], [assists_list[k][1], goals_list[k][1]], 
                         '#ffffff', linestyle="--", alpha=0.5, linewidth=1)
 
-    # Berechne Prozentsätze für gestrichelte Zonen
+    # Berechne Prozentsätze für gestrichelte Zonen - konvertiere zu Tuples für Caching
     if data_type == "goals":
-        zone_percentages = count_goals_in_dashed_zones(all_goals_data)
+        zone_percentages = count_goals_in_dashed_zones(tuple(all_goals_data))
     elif data_type == "assists":
-        zone_percentages = count_assists_in_dashed_zones(all_assists_data)
+        zone_percentages = count_assists_in_dashed_zones(tuple(all_assists_data))
     else:  # both - verwende Tore für Prozentsätze
-        zone_percentages = count_goals_in_dashed_zones(all_goals_data)
+        zone_percentages = count_goals_in_dashed_zones(tuple(all_goals_data))
     
     # Zeige Prozentsätze in den gestrichelten Zonen (leicht transparent)
     # Goldene Zone: zentral oben (x: 25-43, y: 84-100) - ganz oben positioniert
@@ -880,8 +896,11 @@ def draw_all_teams_field(goal_type, teams_data, data_type="goals"):
     
     return fig
 
-def count_goals_in_zone(goals, zone_name):
+@st.cache_data(ttl=300, max_entries=100)
+def count_goals_in_zone(goals_tuple, zone_name):
     """Zählt Tore in einer spezifischen Zone"""
+    # Konvertiere Tuple zurück zu Liste für Caching (Tuples sind hashable)
+    goals = list(goals_tuple) if isinstance(goals_tuple, tuple) else goals_tuple
     count = 0
     for goal in goals:
         x, y = goal
@@ -926,8 +945,11 @@ def count_goals_in_zone(goals, zone_name):
                 count += 1
     return count
 
-def count_assists_in_zone(assists, zone_name):
+@st.cache_data(ttl=300, max_entries=100)
+def count_assists_in_zone(assists_tuple, zone_name):
     """Zählt Assists in einer spezifischen Zone"""
+    # Konvertiere Tuple zurück zu Liste für Caching (Tuples sind hashable)
+    assists = list(assists_tuple) if isinstance(assists_tuple, tuple) else assists_tuple
     count = 0
     for assist in assists:
         x, y = assist
@@ -1064,10 +1086,10 @@ def create_zone_comparison_chart(teams_data, zone_name, goal_type, data_type="go
     for team in teams:
         if data_type == "goals":
             data = teams_data[team][goal_type_key]["goals"]
-            zone_count = count_goals_in_zone(data, zone_name)
+            zone_count = count_goals_in_zone(tuple(data), zone_name)
         else:  # assists
             data = teams_data[team][goal_type_key]["assists"]
-            zone_count = count_assists_in_zone(data, zone_name)
+            zone_count = count_assists_in_zone(tuple(data), zone_name)
         
         total = len(data)
         percentage = (zone_count / total * 100) if total > 0 else 0
@@ -1115,7 +1137,7 @@ def create_all_zones_overview_chart(teams_data, goal_type):
         zone_data[zone] = []
         for team in teams:
             goals = teams_data[team][goal_type_key]["goals"]
-            zone_goals = count_goals_in_zone(goals, zone)
+            zone_goals = count_goals_in_zone(tuple(goals), zone)
             total = len(goals)
             percentage = (zone_goals / total * 100) if total > 0 else 0
             zone_data[zone].append(percentage)
@@ -1534,7 +1556,7 @@ def main():
             team1_goals_list = get_team_data(team1, goal_type1_key, "goals")
             team1_assists_list = get_team_data(team1, goal_type1_key, "assists")
             team1_golden_goals = count_goals_in_golden_zone(team1_goals_list)
-            team1_golden_assists = count_assists_in_zone(team1_assists_list, "Goldene Zone")
+            team1_golden_assists = count_assists_in_zone(tuple(team1_assists_list), "Goldene Zone")
             team1_golden_count = team1_golden_goals + team1_golden_assists
             team1_total = len(team1_goals_list) + len(team1_assists_list)
             data_label1 = "Assists/Tore"
@@ -1544,7 +1566,7 @@ def main():
                 team1_golden_count = count_goals_in_golden_zone(team1_data_list)
                 data_label1 = "Tore"
             else:
-                team1_golden_count = count_assists_in_zone(team1_data_list, "Goldene Zone")
+                team1_golden_count = count_assists_in_zone(tuple(team1_data_list), "Goldene Zone")
                 data_label1 = "Assists"
             team1_total = len(team1_data_list)
         team1_golden_percent = (team1_golden_count / team1_total * 100) if team1_total > 0 else 0
@@ -1554,7 +1576,7 @@ def main():
             team2_goals_list = get_team_data(team2, goal_type2_key, "goals")
             team2_assists_list = get_team_data(team2, goal_type2_key, "assists")
             team2_golden_goals = count_goals_in_golden_zone(team2_goals_list)
-            team2_golden_assists = count_assists_in_zone(team2_assists_list, "Goldene Zone")
+            team2_golden_assists = count_assists_in_zone(tuple(team2_assists_list), "Goldene Zone")
             team2_golden_count = team2_golden_goals + team2_golden_assists
             team2_total = len(team2_goals_list) + len(team2_assists_list)
             data_label2 = "Assists/Tore"
@@ -1564,7 +1586,7 @@ def main():
                 team2_golden_count = count_goals_in_golden_zone(team2_data_list)
                 data_label2 = "Tore"
             else:
-                team2_golden_count = count_assists_in_zone(team2_data_list, "Goldene Zone")
+                team2_golden_count = count_assists_in_zone(tuple(team2_data_list), "Goldene Zone")
                 data_label2 = "Assists"
             team2_total = len(team2_data_list)
         team2_golden_percent = (team2_golden_count / team2_total * 100) if team2_total > 0 else 0
@@ -1578,7 +1600,7 @@ def main():
         if data_type1 == "both":
             team1_goals_list = get_team_data(team1, goal_type1_key, "goals")
             team1_assists_list = get_team_data(team1, goal_type1_key, "assists")
-            team1_red_goals = count_goals_in_zone(team1_goals_list, "Zone 14")
+            team1_red_goals = count_goals_in_zone(tuple(team1_goals_list), "Zone 14")
             team1_red_assists = count_assists_in_red_zone(team1_assists_list)
             team1_red_count = team1_red_goals + team1_red_assists
             team1_total = len(team1_goals_list) + len(team1_assists_list)
@@ -1586,7 +1608,7 @@ def main():
         else:
             team1_data_list = get_team_data(team1, goal_type1_key, data_type1)
             if data_type1 == "goals":
-                team1_red_count = count_goals_in_zone(team1_data_list, "Zone 14")
+                team1_red_count = count_goals_in_zone(tuple(team1_data_list), "Zone 14")
                 data_label1 = "Tore"
             else:
                 team1_red_count = count_assists_in_red_zone(team1_data_list)
@@ -1598,7 +1620,7 @@ def main():
         if data_type2 == "both":
             team2_goals_list = get_team_data(team2, goal_type2_key, "goals")
             team2_assists_list = get_team_data(team2, goal_type2_key, "assists")
-            team2_red_goals = count_goals_in_zone(team2_goals_list, "Zone 14")
+            team2_red_goals = count_goals_in_zone(tuple(team2_goals_list), "Zone 14")
             team2_red_assists = count_assists_in_red_zone(team2_assists_list)
             team2_red_count = team2_red_goals + team2_red_assists
             team2_total = len(team2_goals_list) + len(team2_assists_list)
@@ -1606,7 +1628,7 @@ def main():
         else:
             team2_data_list = get_team_data(team2, goal_type2_key, data_type2)
             if data_type2 == "goals":
-                team2_red_count = count_goals_in_zone(team2_data_list, "Zone 14")
+                team2_red_count = count_goals_in_zone(tuple(team2_data_list), "Zone 14")
                 data_label2 = "Tore"
             else:
                 team2_red_count = count_assists_in_red_zone(team2_data_list)
