@@ -52,8 +52,8 @@ def draw_field():
     ax.add_patch(halbkreis_unten)
 
     # Tore (Fußball-Symbol) & Assists Sturm3 ok,Rapid0 ok,Austria2 ok,Admira1 ok,Tirol4 ok,WAC3 ok,RB2 ok,BL2 ok,LASK1 ok,VA2 ok 
-    goals = [(28,95),(34,92),(43,96),(17,95),(18,85),(37,99),(43,89),(42,84),(33,85),(34,86),(33,94),(34,94),(35,89),(36,86),(39,95),(20,81),(27,86)] # Torpositionen 
-    assists = [(34,84),(39,82),(39,83),(5,70),(7,48),(37,57),(48,73),(43,74),(42,82),(29,79),(26,86),(45,96),(53,83),(37,92),(25,92),(68,100),(46,95)]  # Assist-Positionen
+    goals = [(28,95),(34,92),(43,96),(17,95),(18,85),(37,99),(43,89),(42,84),(33,85),(34,86),(33,94),(34,94),(35,89),(36,86),(39,95),(20,81),(27,86),(34,89),(34,95)] # Torpositionen 
+    assists = [(34,84),(39,82),(39,83),(5,70),(7,48),(37,57),(48,73),(43,74),(42,82),(29,79),(26,86),(45,96),(53,83),(37,92),(25,92),(68,100),(46,95),(19,84),(46,88)]  # Assist-Positionen
 
     # Tore markieren (kleiner Ball-Symbol)
     for i, goal in enumerate(goals):
@@ -70,7 +70,7 @@ def draw_field():
     # Legende seitlich links unten platzieren
     ax.legend(loc="lower left", fontsize=10)
 
-    plt.title("U15 - Gegentore\n 3 Elfmeter / 1 Eigentor n.b.")
+    plt.title("U15 - Gegentore\n 4 Elfmeter / 1 Eigentor n.b.")
     plt.xlabel("Spielfeldbreite (m)")
     plt.ylabel("Spielfeldtiefe (m)")
     return ax
