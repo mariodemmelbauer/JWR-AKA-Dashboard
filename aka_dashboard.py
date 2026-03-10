@@ -140,6 +140,28 @@ def parse_coordinates(coord_str: str) -> List[Tuple[int, int]]:
     
     return coordinates
 
+# Ecken-Positionen: Assists mit (0,100) = linke Ecke, (68,100) = rechte Ecke (Torlinie)
+CORNER_ASSIST_POSITIONS = [(0, 100), (68, 100)]
+
+def filter_corner_goals_and_assists(goals: List[Tuple[int, int]], assists: List[Tuple[int, int]]) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int]]]:
+    """
+    Filtert Tore und Assists auf Ecken-Tore: nur Paare, bei denen der Assist
+    an der Position (0, 100) oder (68, 100) erfolgte (Eckball-Positionen).
+    """
+    filtered_goals = []
+    filtered_assists = []
+    for i in range(min(len(goals), len(assists))):
+        assist_pos = assists[i]
+        # Unterstütze sowohl Tuple als auch einzelne Werte (falls in Daten mal anders)
+        if isinstance(assist_pos, tuple) and len(assist_pos) >= 2:
+            if (int(assist_pos[0]), int(assist_pos[1])) in CORNER_ASSIST_POSITIONS:
+                filtered_goals.append(goals[i])
+                filtered_assists.append(assists[i])
+        elif assist_pos in CORNER_ASSIST_POSITIONS:
+            filtered_goals.append(goals[i])
+            filtered_assists.append(assists[i])
+    return filtered_goals, filtered_assists
+
 @st.cache_data(ttl=300, max_entries=20)
 def extract_additional_info_from_file(file_path: str, file_mod_time: float) -> str:
     """
@@ -1188,7 +1210,7 @@ def main():
     # Sidebar für Auswahl
     
     # Ansichts-Auswahl ganz oben
-    view_options = ["Spielfeld-Ansicht", "Zonen-Vergleich Tore", "Zonen-Vergleich Assists"]
+    view_options = ["Spielfeld-Ansicht", "Ecken-Ansicht", "Zonen-Vergleich Tore", "Zonen-Vergleich Assists"]
     if "view_selection" not in st.session_state:
         st.session_state.view_selection = "Spielfeld-Ansicht"
     
@@ -1236,22 +1258,54 @@ def main():
         st.session_state.goal_type1_selection = "Eigene Tore"
     
     team1 = st.sidebar.selectbox(
-        "Team 1:",
+        "Team auswählen:" if selected_view == "Ecken-Ansicht" else "Team 1:",
         options=team_options,
         index=team1_index,
         key="team1"
     )
     
-    goal_type1 = st.sidebar.selectbox(
-        "Tor-Typ:",
-        options=goal_options,
-        index=goal_type1_index,
-        key="goal_type1"
-    )
-    
-    # Aktualisiere Session State
-    st.session_state.team1_selection = team1
-    st.session_state.goal_type1_selection = goal_type1
+    if selected_view == "Ecken-Ansicht":
+        # Ecken-Ansicht: nur Ecken-Tore (Assist bei (0,100) oder (68,100))
+        ecken_teams_data = {}
+        for team in current_teams_data.keys():
+            eg, ea = filter_corner_goals_and_assists(
+                current_teams_data[team]["eigene_tore"]["goals"],
+                current_teams_data[team]["eigene_tore"]["assists"]
+            )
+            gg, ga = filter_corner_goals_and_assists(
+                current_teams_data[team]["gegentore"]["goals"],
+                current_teams_data[team]["gegentore"]["assists"]
+            )
+            ecken_teams_data[team] = {
+                "eigene_tore": {
+                    "goals": eg, "assists": ea,
+                    "title": f"{team} - Eigene Ecken-Tore",
+                    "additional_info": ""
+                },
+                "gegentore": {
+                    "goals": gg, "assists": ga,
+                    "title": f"{team} - Ecken-Gegentore",
+                    "additional_info": ""
+                }
+            }
+        goal_type1 = "Eigene Tore"
+        goal_type2 = "Gegentore"
+        team2 = team1
+        st.session_state.team1_selection = team1
+        st.session_state.goal_type1_selection = goal_type1
+        st.session_state.team2_selection = team2
+        st.session_state.goal_type2_selection = goal_type2
+    else:
+        goal_type1 = st.sidebar.selectbox(
+            "Tor-Typ:",
+            options=goal_options,
+            index=goal_type1_index,
+            key="goal_type1"
+        )
+        
+        # Aktualisiere Session State
+        st.session_state.team1_selection = team1
+        st.session_state.goal_type1_selection = goal_type1
     
     # Hilfsfunktion zur Konvertierung von Anzeige-Text zu internen Werten
     def convert_goal_type_to_internal(goal_type_display):
@@ -1271,80 +1325,68 @@ def main():
         else:
             return "eigene_tore", "goals"  # Fallback
     
-    # Automatische Team 2 Auswahl basierend auf Team 1
-    # Standard: Team 2 = Team 1 mit Gegen-Tor-Typ
-    default_team2 = team1
-    
-    # Automatische Tor-Typ Auswahl für Team 2 basierend auf Team 1 Tor-Typ
-    if goal_type1 == "Eigene Tore":
-        # Wenn Team 1 "Eigene Tore" hat, wähle "Gegentore" für Team 2
-        default_goal_type2 = "Gegentore"
-    elif goal_type1 == "Eigene Assists":
-        # Wenn Team 1 "Eigene Assists" hat, wähle "Gegnerische Assists" für Team 2
-        default_goal_type2 = "Gegnerische Assists"
-    elif goal_type1 == "Gegentore":
-        # Wenn Team 1 "Gegentore" hat, wähle "Eigene Tore" für Team 2
-        default_goal_type2 = "Eigene Tore"
-    elif goal_type1 == "Gegnerische Assists":
-        # Wenn Team 1 "Gegnerische Assists" hat, wähle "Eigene Assists" für Team 2
-        default_goal_type2 = "Eigene Assists"
-    elif goal_type1 == "Eigene Assists/Tore":
-        # Wenn Team 1 "Eigene Assists/Tore" hat, wähle "Gegnerische Assists/Tore" für Team 2
-        default_goal_type2 = "Gegnerische Assists/Tore"
-    else:  # Gegnerische Assists/Tore
-        # Wenn Team 1 "Gegnerische Assists/Tore" hat, wähle "Eigene Assists/Tore" für Team 2
-        default_goal_type2 = "Eigene Assists/Tore"
-    
-    # Prüfe, ob Team 1 oder goal_type1 sich geändert hat
-    # Wenn ja, setze Team 2 automatisch auf Standard (Team 1 mit Gegen-Tor-Typ)
-    # Wenn nein, behalte die manuelle Auswahl des Benutzers bei
-    if ('last_team1' not in st.session_state or 
-        'last_goal_type1' not in st.session_state or
-        st.session_state.get('last_team1') != team1 or 
-        st.session_state.get('last_goal_type1') != goal_type1):
-        # Team 1 oder Tor-Typ hat sich geändert, setze Team 2 automatisch auf Standard
-        st.session_state.team2_selection = default_team2
-        st.session_state.goal_type2_selection = default_goal_type2
-        st.session_state.last_team1 = team1
-        st.session_state.last_goal_type1 = goal_type1
-    else:
-        # Team 1 hat sich nicht geändert, verwende die gespeicherten Werte (können manuell geändert worden sein)
-        if 'team2_selection' not in st.session_state:
+    if selected_view != "Ecken-Ansicht":
+        # Automatische Team 2 Auswahl basierend auf Team 1
+        # Standard: Team 2 = Team 1 mit Gegen-Tor-Typ
+        default_team2 = team1
+        
+        # Automatische Tor-Typ Auswahl für Team 2 basierend auf Team 1 Tor-Typ
+        if goal_type1 == "Eigene Tore":
+            default_goal_type2 = "Gegentore"
+        elif goal_type1 == "Eigene Assists":
+            default_goal_type2 = "Gegnerische Assists"
+        elif goal_type1 == "Gegentore":
+            default_goal_type2 = "Eigene Tore"
+        elif goal_type1 == "Gegnerische Assists":
+            default_goal_type2 = "Eigene Assists"
+        elif goal_type1 == "Eigene Assists/Tore":
+            default_goal_type2 = "Gegnerische Assists/Tore"
+        else:  # Gegnerische Assists/Tore
+            default_goal_type2 = "Eigene Assists/Tore"
+        
+        # Prüfe, ob Team 1 oder goal_type1 sich geändert hat
+        if ('last_team1' not in st.session_state or 
+            'last_goal_type1' not in st.session_state or
+            st.session_state.get('last_team1') != team1 or 
+            st.session_state.get('last_goal_type1') != goal_type1):
             st.session_state.team2_selection = default_team2
-        if 'goal_type2_selection' not in st.session_state:
             st.session_state.goal_type2_selection = default_goal_type2
-    
-    # Bestimme Index für Team 2 und Tor-Typ basierend auf gespeicherten Werten
-    try:
-        team2_index = team_options.index(st.session_state.team2_selection)
-    except ValueError:
-        team2_index = team_options.index(default_team2) if default_team2 in team_options else 0
-        st.session_state.team2_selection = default_team2
-    
-    try:
-        goal_type2_index = goal_options.index(st.session_state.goal_type2_selection)
-    except ValueError:
-        goal_type2_index = goal_options.index(default_goal_type2) if default_goal_type2 in goal_options else 0
-        st.session_state.goal_type2_selection = default_goal_type2
-    
-    # Zeige Team 2 als Selectbox (kann manuell geändert werden)
-    team2 = st.sidebar.selectbox(
-        "Team 2:",
-        options=team_options,
-        index=team2_index,
-        key="team2"
-    )
-    
-    goal_type2 = st.sidebar.selectbox(
-        "Tor-Typ:",
-        options=goal_options,
-        index=goal_type2_index,
-        key="goal_type2"
-    )
-    
-    # Aktualisiere Session State mit den aktuellen Werten (können manuell geändert worden sein)
-    st.session_state.team2_selection = team2
-    st.session_state.goal_type2_selection = goal_type2
+            st.session_state.last_team1 = team1
+            st.session_state.last_goal_type1 = goal_type1
+        else:
+            if 'team2_selection' not in st.session_state:
+                st.session_state.team2_selection = default_team2
+            if 'goal_type2_selection' not in st.session_state:
+                st.session_state.goal_type2_selection = default_goal_type2
+        
+        try:
+            team2_index = team_options.index(st.session_state.team2_selection)
+        except ValueError:
+            team2_index = team_options.index(default_team2) if default_team2 in team_options else 0
+            st.session_state.team2_selection = default_team2
+        
+        try:
+            goal_type2_index = goal_options.index(st.session_state.goal_type2_selection)
+        except ValueError:
+            goal_type2_index = goal_options.index(default_goal_type2) if default_goal_type2 in goal_options else 0
+            st.session_state.goal_type2_selection = default_goal_type2
+        
+        team2 = st.sidebar.selectbox(
+            "Team 2:",
+            options=team_options,
+            index=team2_index,
+            key="team2"
+        )
+        
+        goal_type2 = st.sidebar.selectbox(
+            "Tor-Typ:",
+            options=goal_options,
+            index=goal_type2_index,
+            key="goal_type2"
+        )
+        
+        st.session_state.team2_selection = team2
+        st.session_state.goal_type2_selection = goal_type2
     
     # Goldene Zone Berechnung und Anzeige basierend auf Team-Auswahl
     def count_goals_in_golden_zone(goals):
@@ -1462,13 +1504,33 @@ def main():
         data2_list = get_team_data(team2, goal_type2_key, data_type2)
         data2_count = len(data2_list)
     
+    # Ecken-Ansicht: Zähler auf gefilterte Ecken-Tore/Gegentore setzen
+    if selected_view == "Ecken-Ansicht":
+        if team1 == "Alle Teams":
+            data1_count = sum(len(ecken_teams_data[t]["eigene_tore"]["goals"]) for t in ecken_teams_data)
+            data2_count = sum(len(ecken_teams_data[t]["gegentore"]["goals"]) for t in ecken_teams_data)
+        else:
+            data1_count = len(ecken_teams_data[team1]["eigene_tore"]["goals"])
+            data2_count = len(ecken_teams_data[team1]["gegentore"]["goals"])
+    
     # Vergleich anzeigen mit zusätzlichen Informationen direkt darunter
     # Team 1
-    if data_type1 == "both":
+    if selected_view == "Ecken-Ansicht":
+        data_label1 = "Ecken-Tore"
+        data_label2 = "Ecken-Gegentore"
+        sidebar_goal_type1 = "Eigene Ecken-Tore"
+        sidebar_goal_type2 = "Ecken-Gegentore"
+    elif data_type1 == "both":
         data_label1 = "Assists/Tore"
+        data_label2 = "Assists/Tore"
+        sidebar_goal_type1 = goal_type1
+        sidebar_goal_type2 = goal_type2
     else:
         data_label1 = "Tore" if data_type1 == "goals" else "Assists"
-    st.sidebar.markdown(f"**{team1} {goal_type1}:** {data1_count} {data_label1}")
+        data_label2 = "Tore" if data_type2 == "goals" else "Assists"
+        sidebar_goal_type1 = goal_type1
+        sidebar_goal_type2 = goal_type2
+    st.sidebar.markdown(f"**{team1} {sidebar_goal_type1}:** {data1_count} {data_label1}")
     if team1 != "Alle Teams":
         # Sichere Extraktion der zusätzlichen Informationen für Team 1
         team1_eigene_info = current_teams_data[team1]["eigene_tore"].get("additional_info", "")
@@ -1481,11 +1543,11 @@ def main():
             st.sidebar.markdown(f"{team1_gegentore_info}")
     
     # Team 2
-    if data_type2 == "both":
+    if selected_view != "Ecken-Ansicht" and data_type2 == "both":
         data_label2 = "Assists/Tore"
-    else:
+    elif selected_view != "Ecken-Ansicht":
         data_label2 = "Tore" if data_type2 == "goals" else "Assists"
-    st.sidebar.markdown(f"**{team2} {goal_type2}:** {data2_count} {data_label2}")
+    st.sidebar.markdown(f"**{team2} {sidebar_goal_type2}:** {data2_count} {data_label2}")
     if team2 != "Alle Teams":
         # Sichere Extraktion der zusätzlichen Informationen für Team 2
         team2_eigene_info = current_teams_data[team2]["eigene_tore"].get("additional_info", "")
@@ -1666,6 +1728,24 @@ def main():
                 fig2 = draw_all_teams_field(goal_type2_key, current_teams_data, data_type2)
             else:
                 fig2 = draw_field(team2, goal_type2_key, current_teams_data, data_type2)
+            st.pyplot(fig2, use_container_width=True)
+    
+    elif selected_view == "Ecken-Ansicht":
+        # Nur Tore/Gegentore mit Assist bei (0,100) oder (68,100) – Ecken
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"### {team1} - Eigene Ecken-Tore")
+            if team1 == "Alle Teams":
+                fig1 = draw_all_teams_field("eigene_tore", ecken_teams_data, "both")
+            else:
+                fig1 = draw_field(team1, "eigene_tore", ecken_teams_data, "both")
+            st.pyplot(fig1, use_container_width=True)
+        with col2:
+            st.markdown(f"### {team1} - Ecken-Gegentore")
+            if team1 == "Alle Teams":
+                fig2 = draw_all_teams_field("gegentore", ecken_teams_data, "both")
+            else:
+                fig2 = draw_field(team1, "gegentore", ecken_teams_data, "both")
             st.pyplot(fig2, use_container_width=True)
     
     elif selected_view == "Zonen-Vergleich Tore":
