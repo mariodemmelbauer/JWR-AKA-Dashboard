@@ -70,7 +70,7 @@ def draw_field():
     # Legende seitlich links unten platzieren
     ax.legend(loc="lower left", fontsize=10)
 
-    plt.title("U18 - Gegentore\n 2 Elfmeter n.b. / 1 dir.FS n.b. ")
+    plt.title("U18 - Gegentore\n 4 Elfmeter n.b. / 1 dir.FS n.b. ")
     plt.xlabel("Spielfeldbreite (m)")
     plt.ylabel("Spielfeldtiefe (m)")
     return ax
